@@ -4,18 +4,19 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Product } from '../types';
 import toast from 'react-hot-toast';
-// Import icons if needed
-import { Sparkles } from 'lucide-react';
 
-const jewelryCategories = [
-  { name: 'Rings', icon: '💍' },
-  { name: 'Necklaces', icon: '📿' },
-  { name: 'Earrings', icon: '🦻' },
-  { name: 'Bracelets', icon: '🧿' },
-  { name: 'Brooches', icon: '🎀' },
-  { name: 'Pendants', icon: '🔗' },
-  { name: 'Charms', icon: '🧸' },
-  { name: 'Watches', icon: '⌚' },
+const groceryCategories = [
+  { name: 'Fresh Produce', icon: '🥬' },
+  { name: 'Dairy & Eggs', icon: '🥛' },
+  { name: 'Meat & Seafood', icon: '🥩' },
+  { name: 'Bakery', icon: '🍞' },
+  { name: 'Pantry Staples', icon: '🥫' },
+  { name: 'Frozen Foods', icon: '❄️' },
+  { name: 'Beverages', icon: '🧃' },
+  { name: 'Snacks', icon: '🍪' },
+  { name: 'Household', icon: '🧹' },
+  {name:'personal care', icon:'🧴'},
+  {name:'food', icon:'🍽️'},
 ];
 
 const Home: React.FC = () => {
@@ -59,247 +60,364 @@ const Home: React.FC = () => {
   };
   
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
-      {/* Hero Section with Premium Styling */}
-      <section 
-        className="relative h-[500px] bg-cover bg-center bg-fixed" 
-        style={{ backgroundImage: "url('https://plus.unsplash.com/premium_photo-1661558675975-58ff8435b9f8?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')" }}>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30"></div>
-        <div className="relative h-full container mx-auto px-6 flex items-center">
-          <div className="max-w-2xl text-white">
-            <div className="flex items-center mb-4">
-              <span className="h-[1px] w-12 bg-gold mr-4"></span>
-              <span className="font-serif tracking-wider text-gold">AMETHYST LUXURY</span>
-            </div>
-            <h1 className="text-5xl font-serif font-bold mb-6 drop-shadow-md tracking-wide leading-tight">Discover Exquisite <span className="text-gold">Jewelry</span></h1>
-            <p className="text-xl mb-8 drop-shadow-md font-light tracking-wide leading-relaxed">
-              Explore our collection of handcrafted jewelry pieces that tell your unique story.
-            </p>
-            <Link
-              to="/products"
-              className="inline-block bg-gradient-to-r from-purple-600 to-purple-700 text-white px-10 py-3.5 rounded-md font-serif font-medium hover:from-purple-700 hover:to-purple-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              <div className="flex items-center">
-                <span>Shop Collection</span>
-                <Sparkles className="w-4 h-4 ml-2 opacity-70" />
+    <div className="bg-white min-h-screen">
+      {/* FoodPanda-Style Hero Banner */}
+      <section className="bg-gradient-to-br from-red-500 via-red-600 to-red-700 relative overflow-hidden">
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex flex-col lg:flex-row items-center justify-between">
+            
+            {/* Left Content */}
+            <div className="lg:w-1/2 text-white mb-8 lg:mb-0">
+              <div className="flex items-center mb-6">
+                <img 
+                  src="/images/logo2.png" 
+                  alt="GDS Logo" 
+                  className="w-20 h-20 object-contain mr-4 bg-white rounded-full p-2"
+                />
+                <div>
+                  <h1 className="text-4xl lg:text-5xl font-black">GDS</h1>
+                  <p className="text-yellow-300 text-xl font-bold">BUDGETARIAN</p>
+                </div>
               </div>
-            </Link>
+              
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4">
+                Delicious food delivered in <span className="text-yellow-300">30 minutes</span>
+              </h2>
+              
+              <p className="text-red-100 text-lg mb-6">
+                Fresh meals, groceries & more. Available 24/7 at budget-friendly prices.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <Link
+                  to="/products"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-red-800 px-8 py-4 rounded-xl font-bold text-lg transition-colors duration-300 shadow-lg hover:shadow-xl text-center"
+                >
+                  Order Now
+                </Link>
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 text-center">
+                  <div className="text-yellow-300 font-bold text-2xl">₱99</div>
+                  <div className="text-white text-sm">Unlimited Rice</div>
+                </div>
+              </div>
+              
+              {/* Service Tags */}
+              <div className="flex flex-wrap gap-2">
+                {['🚚 Free Delivery', '⏰ 24/7 Open', '🍚 Unlimited Rice', '🔥 Hot & Fresh'].map((tag) => (
+                  <span key={tag} className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            {/* Right Content - Floating Cards */}
+            <div className="lg:w-1/2 relative">
+              <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                <div className="bg-white rounded-2xl p-4 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-3">
+                    <span className="text-white text-xl">🍽️</span>
+                  </div>
+                  <h3 className="font-bold text-red-800 mb-1">Dine-In</h3>
+                  <p className="text-gray-600 text-sm">Cozy atmosphere</p>
+                </div>
+                
+                <div className="bg-white rounded-2xl p-4 shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-300 mt-8">
+                  <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mb-3">
+                    <span className="text-white text-xl">🚚</span>
+                  </div>
+                  <h3 className="font-bold text-red-800 mb-1">Delivery</h3>
+                  <p className="text-gray-600 text-sm">Fast & reliable</p>
+                </div>
+                
+                <div className="bg-white rounded-2xl p-4 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-300 -mt-4">
+                  <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mb-3">
+                    <span className="text-white text-xl">🥡</span>
+                  </div>
+                  <h3 className="font-bold text-red-800 mb-1">Take-Out</h3>
+                  <p className="text-gray-600 text-sm">Quick pickup</p>
+                </div>
+                
+                <div className="bg-white rounded-2xl p-4 shadow-2xl transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+                  <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mb-3">
+                    <span className="text-white text-xl">🛒</span>
+                  </div>
+                  <h3 className="font-bold text-red-800 mb-1">Groceries</h3>
+                  <p className="text-gray-600 text-sm">Fresh daily</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+        
+        {/* Decorative Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400/10 rounded-full -mr-32 -mt-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
       </section>
 
-      {/* Elegant Category Section */}
-      {/* Custom styles are applied directly through Tailwind classes */}
-      <section className="container mx-auto px-6 py-12">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-serif font-medium mb-2">Explore <span className="text-purple-600">Collections</span></h2>
-          <div className="w-24 h-[1px] bg-gradient-to-r from-purple-400 to-gold mx-auto"></div>
-        </div>
-        <div className="category-gradient rounded-xl p-8 shadow-sm">
-          <div className="flex flex-wrap justify-center gap-8">
-            {jewelryCategories.map((cat) => (
+      {/* FoodPanda-Style Categories Section */}
+      <section className="bg-gray-50 py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-gray-800">List of categories</h2>
+            <Link to="/products" className="text-red-600 font-medium hover:text-red-700 transition-colors">
+              See all
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-4">
+            {groceryCategories.map((cat) => (
               <button
                 key={cat.name}
-                className="category-button flex flex-col items-center focus:outline-none group transition-all duration-300"
+                className="flex flex-col items-center p-3 bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group border border-gray-100 hover:border-red-200"
                 onClick={() => navigate(`/products?category=${encodeURIComponent(cat.name)}`)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                <div className="bg-white/70 backdrop-blur-sm rounded-full w-16 h-16 flex items-center justify-center mb-3 shadow-md group-hover:shadow-lg transition-all duration-300 border border-gold/20 group-hover:border-gold/50">
-                  <span className="icon text-3xl group-hover:scale-110 transition-transform duration-300">{cat.icon}</span>
+                <div className="w-14 h-14 bg-gradient-to-br from-red-50 to-yellow-50 rounded-xl flex items-center justify-center mb-2 group-hover:from-red-100 group-hover:to-yellow-100 transition-all duration-300">
+                  <span className="text-2xl group-hover:scale-110 transition-transform duration-300">{cat.icon}</span>
                 </div>
-                <span className="text-sm font-medium font-serif tracking-wide text-gray-700 group-hover:amethyst-text group-hover:font-semibold transition-all">{cat.name}</span>
+                <span className="text-xs font-medium text-gray-700 text-center leading-tight group-hover:text-red-600 transition-colors">
+                  {cat.name}
+                </span>
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Featured Jewelry Section - Enhanced */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-serif font-medium text-gray-800">Featured <span className="text-purple-600">Collection</span></h2>
-            <div className="w-20 h-[1px] bg-gradient-to-r from-purple-400 to-[#e0b973] mt-2"></div>
-          </div>
-          <Link to="/products" className="text-[#e0b973] hover:text-purple-600 font-serif text-sm tracking-wider flex items-center group transition-all duration-300">
-            View Collection <span className="ml-1 transform group-hover:translate-x-1 transition-transform duration-300">→</span>
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-          {loading ? (
-            <div className="col-span-4 flex justify-center py-20">
-              <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-purple-500"></div>
-            </div>
-          ) : featuredProducts.length > 0 ? featuredProducts.map((item) => (
-            <div key={item.id} className="bg-white/80 backdrop-blur-sm rounded-lg overflow-hidden group transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-[#e0b973]/30" 
-                 style={{ boxShadow: '0 10px 30px -15px rgba(0,0,0,0.1)' }}>
-              <div className="relative overflow-hidden">
-                <div className="absolute top-3 right-3 z-10 bg-white/80 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer shadow-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#a084ca" viewBox="0 0 16 16">
-                    <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
-                  </svg>
-                </div>
-                <img src={item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'} 
-                    alt={item.name} className="w-full h-60 object-cover transform group-hover:scale-105 transition-transform duration-700" />
-              </div>
-              <div className="p-5">
-                <h3 className="font-serif text-lg mb-2 text-gray-800 group-hover:text-purple-600 transition-colors">{item.name}</h3>
-                <div className="flex items-center justify-between mt-4">
-                  <span className="text-[#e0b973] font-medium font-serif">₱{item.price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
-                  <button 
-                    className="border border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white px-4 py-1.5 rounded-sm text-sm font-medium transition-colors duration-300" 
-                    onClick={() => navigate(`/products/${item.id}`)}
-                  >
-                    Shop Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          )) : (
-            <div className="col-span-4 text-center py-16 text-gray-400 font-serif italic">No featured products found</div>
-          )}
-        </div>
-      </section>
-
-     
-
-      {/* Today's Picks - Enhanced */}
-      <section className="container mx-auto px-6 py-16 bg-gray-50/50">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-serif font-medium text-gray-800">Today's <span className="text-purple-600">Selection</span></h2>
-            <div className="w-20 h-[1px] bg-gradient-to-r from-[#e0b973] to-purple-400 mt-2"></div>
-          </div>
-          <Link to="/products" className="text-[#e0b973] hover:text-purple-600 font-serif text-sm tracking-wider flex items-center group transition-all duration-300">
-            View All <span className="ml-1 transform group-hover:translate-x-1 transition-transform duration-300">→</span>
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {loading ? (
-            <div className="col-span-4 flex justify-center py-20">
-              <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-purple-500"></div>
-            </div>
-          ) : allProducts.length > 0 ? allProducts.slice(0, 8).map((item) => (
-            <div key={item.id} className="bg-white/90 backdrop-blur-sm rounded-lg overflow-hidden group transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-[#e0b973]/30"
-                 style={{ boxShadow: '0 10px 20px -10px rgba(0,0,0,0.08)' }}>
-              <div className="relative overflow-hidden">
-                <div className="absolute top-3 right-3 z-10 bg-white/80 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer shadow-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#a084ca" viewBox="0 0 16 16">
-                    <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
-                  </svg>
-                </div>
-                <img src={item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'} 
-                    alt={item.name} className="w-full h-56 object-cover transform group-hover:scale-105 transition-transform duration-700" />
-              </div>
-              <div className="p-5">
-                <h3 className="font-serif text-lg mb-2 text-gray-800 group-hover:text-purple-600 transition-colors">{item.name}</h3>
-                <div className="flex items-center justify-between mt-4">
-                  <span className="text-[#e0b973] font-medium font-serif">₱{item.price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
-                  <button 
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-5 py-1.5 rounded-sm text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5" 
-                    onClick={() => navigate(`/products/${item.id}`)}
-                  >
-                    Add to Cart
-                  </button>
-                </div>
-              </div>
-            </div>
-          )) : (
-            <div className="col-span-4 text-center py-16 text-gray-400 font-serif italic">No products available at the moment</div>
-          )}
-        </div>
-      </section>
-
-      {/* Best Sellers - Enhanced with Luxury Styling */}
-      <section className="container mx-auto px-6 py-20 relative">
-        <div className="absolute left-0 right-0 h-40 top-0 bg-gradient-to-b from-white to-transparent z-0"></div>
-        <div className="relative z-10">
-          <div className="text-center mb-12">
-            <span className="inline-block mb-2 text-[#e0b973] font-serif tracking-wider">PREMIUM SELECTION</span>
-            <h2 className="text-3xl font-serif font-medium text-gray-800 mb-2">Our <span className="text-purple-600">Best Sellers</span></h2>
-            <div className="w-32 h-[1px] bg-gradient-to-r from-[#e0b973] to-purple-400 mx-auto"></div>
+      {/* FoodPanda-Style Featured Products */}
+      <section className="bg-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-gray-800">Popular near you</h2>
+            <Link to="/products" className="text-red-600 font-medium hover:text-red-700 transition-colors">
+              See all
+            </Link>
           </div>
           
-          <div className="flex flex-wrap justify-center gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {loading ? (
-              <div className="w-full flex justify-center py-16">
-                <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-b-2 border-purple-500"></div>
+              <div className="col-span-4 flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
               </div>
-            ) : bestSellingProducts.length > 0 ? bestSellingProducts.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-lg overflow-hidden group transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-[#e0b973]/30 w-56 cursor-pointer transform hover:-translate-y-1"
-                onClick={() => navigate(`/products/${item.id}`)}
-                role="button"
-                tabIndex={0}
-                onKeyPress={e => { if (e.key === 'Enter' || e.key === ' ') navigate(`/products/${item.id}`); }}
-                style={{ boxShadow: '0 10px 25px -15px rgba(0,0,0,0.1)' }}
-              >
+            ) : featuredProducts.length > 0 ? featuredProducts.map((item) => (
+              <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group border border-gray-100 hover:border-red-200 cursor-pointer" 
+                   onClick={() => navigate(`/products/${item.id}`)}>
                 <div className="relative overflow-hidden">
-                  <div className="absolute top-0 left-0 bg-[#e0b973] text-xs text-white px-3 py-1 rounded-br font-medium z-10 shadow-sm">
-                    Best Seller
+                  <img src={item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'} 
+                      alt={item.name} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      Popular
+                    </span>
                   </div>
-                  <img 
-                    src={item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'} 
-                    alt={item.name} 
-                    className="w-full h-44 object-cover transform group-hover:scale-105 transition-transform duration-700" 
-                  />
+                  <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#ef4444" viewBox="0 0 16 16">
+                      <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                    </svg>
+                  </div>
                 </div>
-                <div className="p-4 text-center">
-                  <h3 className="font-serif text-lg mb-2 text-gray-800 group-hover:text-purple-600 transition-colors">{item.name}</h3>
-                  <div className="flex justify-center items-center">
-                    <div className="flex items-center justify-center gap-1 mb-2">
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">{item.name}</h3>
+                  <div className="flex items-center mb-3">
+                    <div className="flex items-center">
                       {[...Array(5)].map((_, i) => (
-                        <svg key={i} xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#e0b973" viewBox="0 0 16 16">
-                          <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                        <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
                         </svg>
                       ))}
+                      <span className="text-gray-600 text-sm ml-2">4.8 (120+)</span>
                     </div>
                   </div>
-                  <span className="text-[#e0b973] font-medium font-serif block">₱{item.price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="text-xl font-bold text-red-600">₱{item.price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <button 
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 shadow-sm hover:shadow-md" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/products/${item.id}`);
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex items-center mt-2 text-gray-500 text-sm">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"/>
+                    </svg>
+                    <span>25-35 min • Free delivery</span>
+                  </div>
                 </div>
               </div>
             )) : (
-              <div className="w-full text-center py-16 text-gray-400 font-serif italic">No best selling products found</div>
+              <div className="col-span-4 text-center py-16 text-gray-400">No featured products found</div>
             )}
           </div>
         </div>
       </section>
 
-      {/* Luxurious Video Showcase */}
-      <section className="w-full flex flex-col justify-center bg-black py-10 relative">
-        <div className="container mx-auto px-6 text-center mb-10 relative z-10">
-          <span className="text-[#e0b973] font-serif tracking-wider block mb-2">AMETHYST LUXURY</span>
-          <h2 className="text-3xl md:text-4xl font-serif font-medium text-white mb-4">Craftsmanship Beyond <span className="text-[#e0b973]">Ordinary</span></h2>
-          <p className="text-gray-300 max-w-2xl mx-auto font-light leading-relaxed">
-            Each piece in our collection is meticulously crafted to reflect elegance, sophistication, and timeless beauty.  
-          </p>
-        </div>
-        
-        <div className="relative w-full overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-          <video
-            src="https://media.tiffany.com/is/content/tiffanydm/2025_HW_HP_Hero_Desktop"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full max-h-[400px] object-cover shadow-lg"
-          />
-          <div className="absolute bottom-10 left-0 right-0 text-center z-20">
-            <button 
-              onClick={() => navigate('/products')}
-              className="bg-transparent backdrop-blur-sm border-2 border-[#e0b973] text-[#e0b973] hover:bg-[#e0b973]/10 px-8 py-3 rounded-sm text-sm tracking-wider font-serif transition-all duration-300"
-            >
-              EXPLORE THE COLLECTION
-            </button>
+     
+
+      {/* FoodPanda-Style Today's Specials */}
+      <section className="bg-gray-50 py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-gray-800">Today's specials</h2>
+            <Link to="/products" className="text-red-600 font-medium hover:text-red-700 transition-colors">
+              View all
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {loading ? (
+              <div className="col-span-4 flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+              </div>
+            ) : allProducts.length > 0 ? allProducts.slice(0, 8).map((item) => (
+              <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group border border-gray-100 hover:border-red-200 cursor-pointer"
+                   onClick={() => navigate(`/products/${item.id}`)}>
+                <div className="relative overflow-hidden">
+                  <img src={item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'} 
+                      alt={item.name} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-yellow-400 text-red-800 px-2 py-1 rounded-full text-xs font-bold">
+                      Special
+                    </span>
+                  </div>
+                  <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#ef4444" viewBox="0 0 16 16">
+                      <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">{item.name}</h3>
+                  <div className="flex items-center mb-3">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                        </svg>
+                      ))}
+                      <span className="text-gray-600 text-sm ml-2">4.9 (85+)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="text-xl font-bold text-red-600">₱{item.price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <button 
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 shadow-sm hover:shadow-md" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/products/${item.id}`);
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex items-center mt-2 text-gray-500 text-sm">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                    </svg>
+                    <span>20-30 min • ₱99 unlimited rice</span>
+                  </div>
+                </div>
+              </div>
+            )) : (
+              <div className="col-span-4 text-center py-16 text-gray-400">No products available at the moment</div>
+            )}
           </div>
         </div>
-        
-        {/* Footer Navigation */}
-      
       </section>
+
+      {/* FoodPanda-Style Best Sellers */}
+      <section className="bg-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">Best sellers</h2>
+              <p className="text-gray-600 text-sm">Most loved by customers</p>
+            </div>
+            <Link to="/products" className="text-red-600 font-medium hover:text-red-700 transition-colors">
+              See all
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            {loading ? (
+              <div className="col-span-5 flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+              </div>
+            ) : bestSellingProducts.length > 0 ? bestSellingProducts.map((item) => (
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group border border-gray-100 hover:border-red-200 cursor-pointer"
+                onClick={() => navigate(`/products/${item.id}`)}
+              >
+                <div className="relative overflow-hidden">
+                  <img 
+                    src={item.images && item.images.length > 0 ? item.images[0] : '/placeholder.jpg'} 
+                    alt={item.name} 
+                    className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                      </svg>
+                      Best
+                    </span>
+                  </div>
+                  <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#ef4444" viewBox="0 0 16 16">
+                      <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors line-clamp-2">{item.name}</h3>
+                  <div className="flex items-center mb-3">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                        </svg>
+                      ))}
+                      <span className="text-gray-600 text-sm ml-2">5.0 (200+)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="text-xl font-bold text-red-600">₱{item.price?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <button 
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-300 shadow-sm hover:shadow-md" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/products/${item.id}`);
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex items-center mt-2 text-gray-500 text-sm">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                    </svg>
+                    <span>15-25 min • Most popular</span>
+                  </div>
+                </div>
+              </div>
+            )) : (
+              <div className="col-span-5 text-center py-16 text-gray-400">No best selling products found</div>
+            )}
+          </div>
+        </div>
+      </section>
+
+     
 
     </div>
   );

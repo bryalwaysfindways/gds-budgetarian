@@ -107,25 +107,13 @@ const Login: React.FC = () => {
         zIndex: -1
       }} />
       
-      {/* Decorative Gem Icon */}
-      <div style={{
-        position: 'absolute',
-        top: 40,
-        left: 40,
-        fontSize: 48,
-        color: '#e0b973',
-        opacity: 0.25,
-        pointerEvents: 'none',
-        zIndex: 1,
-      }}>
-        <span role="img" aria-label="gem">💎</span>
-      </div>
-      
+
+    
       {/* Logo */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
         <img 
-          src="../images/new2.png" 
-          alt="Amethyst Jewelry" 
+          src="../images/gds-logo.png" 
+          alt="GDS Budgetarian" 
           width={120} 
           height={120} 
           style={{ 
@@ -151,11 +139,11 @@ const Login: React.FC = () => {
         <h2 style={{ 
           marginBottom: 28, 
           textAlign: 'center', 
-          color: '#a084ca', 
+          color: '#e53e3e', 
           fontSize: '2rem',
           fontFamily: 'serif',
           fontWeight: 700,
-          textShadow: '0 2px 8px rgba(224,185,115,0.15)',
+          textShadow: '0 2px 8px rgba(236,201,75,0.15)',
           letterSpacing: '2px'
         }}>Welcome Back</h2>
         
@@ -171,12 +159,12 @@ const Login: React.FC = () => {
               marginBottom: 16, 
               padding: '12px 16px', 
               borderRadius: 8, 
-              border: '1px solid #e0b973',
+              border: '1px solid #ecc94b',
               backgroundColor: 'rgba(255,255,255,0.95)',
               fontSize: '1rem',
               fontFamily: 'serif',
               color: '#7d5a5a',
-              boxShadow: '0 1px 4px rgba(224,185,115,0.07)',
+              boxShadow: '0 1px 4px rgba(236,201,75,0.07)',
               outline: 'none',
               transition: 'border 0.2s'
             }}
@@ -192,19 +180,19 @@ const Login: React.FC = () => {
               marginBottom: 16, 
               padding: '12px 16px', 
               borderRadius: 8, 
-              border: '1px solid #e0b973',
+              border: '1px solid #ecc94b',
               backgroundColor: 'rgba(255,255,255,0.95)',
               fontSize: '1rem',
               fontFamily: 'serif',
               color: '#7d5a5a',
-              boxShadow: '0 1px 4px rgba(224,185,115,0.07)',
+              boxShadow: '0 1px 4px rgba(236,201,75,0.07)',
               outline: 'none',
               transition: 'border 0.2s'
             }}
           />
           {error && 
             <div style={{ 
-              color: '#a084ca', 
+              color: '#e53e3e', 
               background: '#fff6e7',
               marginBottom: 16, 
               textAlign: 'center', 
@@ -224,7 +212,7 @@ const Login: React.FC = () => {
               width: '100%', 
               padding: 13, 
               borderRadius: 8, 
-              background: 'linear-gradient(90deg, #a084ca 0%, #e0b973 100%)', 
+              background: 'linear-gradient(90deg, #e53e3e 0%, #ecc94b 100%)', 
               color: '#fff', 
               border: 'none', 
               fontWeight: 'bold',

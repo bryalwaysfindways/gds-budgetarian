@@ -6,13 +6,13 @@ import { getStorage } from 'firebase/storage';
 // Replace these values with your actual Firebase configuration from your Firebase Console
 // Go to: Project Settings (gear icon) > General > Your Apps > Web App > Config
 const firebaseConfig = {
-  apiKey: "AIzaSyCLuAFnfJiFsmE0-SJsqAgLbHjmcR5nSX8",
-  authDomain: "ecommerse-app-82338.firebaseapp.com",
-  projectId: "ecommerse-app-82338",
-  storageBucket: "ecommerse-app-82338.firebasestorage.app",
-  messagingSenderId: "315571657905",
-  appId: "1:315571657905:web:fda85fdb35f66a2bb39690",
-  measurementId: "G-W12YZFY9CF"
+  apiKey: "AIzaSyBFthzY6pSyUx2wCyy23rYnqzGfVkgnlRM",
+  authDomain: "jd-solutions-c0a40.firebaseapp.com",
+  projectId: "jd-solutions-c0a40",
+  storageBucket: "jd-solutions-c0a40.firebasestorage.app",
+  messagingSenderId: "69424021927",
+  appId: "1:69424021927:web:9165de70b011956d92f682",
+  measurementId: "G-ZL43FZKZ1J"
 };
 
 

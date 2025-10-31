@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'staff';
   addresses: Address[];
   phone?: string; // Add optional phone field
 }

@@ -3,18 +3,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Product } from '../../types';
-import { X, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const jewelryCategories = [
-  { name: 'Rings', icon: '💍' },
-  { name: 'Necklaces', icon: '📿' },
-  { name: 'Earrings', icon: '🦻' },
-  { name: 'Bracelets', icon: '🧿' },
-  { name: 'Brooches', icon: '🎀' },
-  { name: 'Pendants', icon: '🔗' },
-  { name: 'Charms', icon: '🧸' },
-  { name: 'Watches', icon: '⌚' },
+const groceryCategories = [
+  { name: 'Fresh Produce', icon: '🥬' },
+  { name: 'Dairy & Eggs', icon: '🥛' },
+  { name: 'Meat & Seafood', icon: '🥩' },
+  { name: 'Bakery', icon: '🍞' },
+  { name: 'Pantry Staples', icon: '🥫' },
+  { name: 'Frozen Foods', icon: '❄️' },
+  { name: 'Beverages', icon: '🧃' },
+  { name: 'Snacks', icon: '🍪' },
+  { name: 'Household', icon: '🧹' },
+  {name:'personal care', icon:'🧴'},
+  {name:'food', icon:'🍽️'},
 ];
 
 export default function ProductForm() {
@@ -29,7 +32,6 @@ export default function ProductForm() {
     category: '',
     tags: [],
     images: [],
-    inventory: 0,
     isSale: false,
     isFeatured: false,
   });
@@ -77,7 +79,6 @@ export default function ProductForm() {
     if (!product.description || product.description.trim().length < 10) newErrors.description = 'Description is required (min 10 characters)';
     if (product.price === undefined || product.price === null || isNaN(Number(product.price)) || Number(product.price) <= 0) newErrors.price = 'Price must be greater than 0';
     if (!product.category) newErrors.category = 'Category is required';
-    if (!product.inventory || Number(product.inventory) < 0) newErrors.inventory = 'Inventory cannot be negative';
     if (!Array.isArray(product.images) || product.images.length === 0) newErrors.images = 'At least one image is required';
     if (product.tags && Array.isArray(product.tags) && product.tags.some(tag => tag.length < 2)) newErrors.tags = 'All tags must be at least 2 characters';
     setErrors(newErrors);
@@ -93,7 +94,6 @@ export default function ProductForm() {
       const productData = {
         ...product,
         price: Number(product.price),
-        inventory: Number(product.inventory),
         isSale: !!product.isSale,
         isFeatured: !!product.isFeatured,
         createdAt: new Date(),
@@ -121,15 +121,19 @@ export default function ProductForm() {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          {id ? 'Edit Product' : 'Add New Product'}
-        </h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-red-50">
+      <div className="container-fluid px-4 py-6">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              {id ? 'Edit Product' : 'Add New Product'}
+            </h1>
+            <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-400 rounded-full"></div>
+          </div>
+        </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6">
-        <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg border border-yellow-200 overflow-hidden">
+          <div className="p-8 space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Product Name
@@ -138,7 +142,7 @@ export default function ProductForm() {
               type="text"
               value={product.name}
               onChange={(e) => setProduct({ ...product, name: e.target.value })}
-              className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 ${errors.name ? 'border-red-500' : 'border-yellow-300 hover:border-yellow-400'}`}
               required
             />
             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
@@ -154,47 +158,28 @@ export default function ProductForm() {
                 setProduct({ ...product, description: e.target.value })
               }
               rows={4}
-              className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 ${errors.description ? 'border-red-500' : 'border-yellow-300 hover:border-yellow-400'}`}
               required
             />
             {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price
-              </label>
-              <input
-                type="number"
-                value={product.price}
-                onChange={(e) =>
-                  setProduct({ ...product, price: Number(e.target.value) })
-                }
-                min="0"
-                step="0.01"
-                className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
-                required
-              />
-              {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Inventory
-              </label>
-              <input
-                type="number"
-                value={product.inventory}
-                onChange={(e) =>
-                  setProduct({ ...product, inventory: Number(e.target.value) })
-                }
-                min="0"
-                className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.inventory ? 'border-red-500' : 'border-gray-300'}`}
-                required
-              />
-              {errors.inventory && <p className="text-red-500 text-xs mt-1">{errors.inventory}</p>}
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Price
+            </label>
+            <input
+              type="number"
+              value={product.price}
+              onChange={(e) =>
+                setProduct({ ...product, price: Number(e.target.value) })
+              }
+              min="0"
+              step="0.01"
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 ${errors.price ? 'border-red-500' : 'border-yellow-300 hover:border-yellow-400'}`}
+              required
+            />
+            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
           </div>
 
           <div>
@@ -204,11 +189,11 @@ export default function ProductForm() {
             <select
   value={product.category}
   onChange={(e) => setProduct({ ...product, category: e.target.value })}
-  className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.category ? 'border-red-500' : 'border-gray-300'}`}
+  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 ${errors.category ? 'border-red-500' : 'border-yellow-300 hover:border-yellow-400'}`}
   required
 >
   <option value="">Select Category</option>
-  {jewelryCategories.map((cat) => (
+  {groceryCategories.map((cat) => (
     <option key={cat.name} value={cat.name}>
       {cat.icon} {cat.name}
     </option>
@@ -250,7 +235,7 @@ export default function ProductForm() {
                   tags: e.target.value.split(',').map((tag) => tag.trim()).filter(Boolean),
                 })
               }
-              className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.tags ? 'border-red-500' : 'border-gray-300'}`}
+              className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 ${errors.tags ? 'border-red-500' : 'border-yellow-300 hover:border-yellow-400'}`}
             />
             {errors.tags && <p className="text-red-500 text-xs mt-1">{errors.tags}</p>}
           </div>
@@ -286,12 +271,12 @@ export default function ProductForm() {
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="Enter image URL"
-                className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 hover:border-yellow-400"
               />
               <button
                 type="button"
                 onClick={handleAddImage}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 Add Image
               </button>
@@ -303,20 +288,21 @@ export default function ProductForm() {
             <button
               type="button"
               onClick={() => navigate('/admin/products')}
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-6 py-3 border-2 border-yellow-400 text-yellow-600 rounded-lg hover:bg-yellow-50 transition-all duration-200 font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
             >
               {loading ? 'Saving...' : id ? 'Update Product' : 'Create Product'}
             </button>
           </div>
-        </div>
-      </form>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

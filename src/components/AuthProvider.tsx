@@ -28,7 +28,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
               id: firebaseUser.uid,
               email: firebaseUser.email!,
               name: firebaseUser.displayName || 'User',
-              role: 'user' as 'user' | 'admin',
+              role: 'user' as 'user' | 'admin' | 'staff',
               addresses: []
             };
             await setDoc(userDocRef, userData);
@@ -40,7 +40,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
             id: firebaseUser.uid,
             email: firebaseUser.email!,
             name: firebaseUser.displayName || userData.name || 'User',
-            role: (userData?.role || 'user') as 'user' | 'admin',
+            role: (userData?.role || 'user') as 'user' | 'admin' | 'staff',
             addresses: userData?.addresses || []
           });
         } else {

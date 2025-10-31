@@ -13,17 +13,20 @@ import Login from './pages/Login';
 import Registration from './pages/Registration';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/Dashboard';
+import StaffDashboard from './pages/staff/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthProvider from './components/AuthProvider';
 
 function AppLayout() {
   const location = useLocation();
   const hideNavbar = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/registration';
+  const isAdmin = location.pathname.startsWith('/admin');
+  const isStaff = location.pathname.startsWith('/staff');
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {!hideNavbar && <Navbar />}
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className={`flex-grow ${isAdmin || isStaff ? 'w-full p-0' : 'container mx-auto px-4 py-8'}`}>
         <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/products" element={<Products />} />
@@ -49,9 +52,17 @@ function AppLayout() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/staff/*"
+                element={
+                  <ProtectedRoute staffOnly>
+                    <StaffDashboard />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </main>
-      {!hideNavbar && <Footer /> }
+      {!hideNavbar && !isAdmin && !isStaff && <Footer />}
       <Toaster position="top-center" />
     </div>
   );

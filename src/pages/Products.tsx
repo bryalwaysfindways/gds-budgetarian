@@ -42,7 +42,7 @@ const Products: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const { user } = useAuthStore();
 
-  const categories = ['All', 'Rings', 'Necklaces', 'Earrings', 'Bracelets'];
+  const categories = ['All', 'Fresh Produce', 'Dairy & Eggs', 'Meat & Seafood', 'Bakery', 'Pantry Staples', 'Frozen Foods', 'Beverages', 'Snacks', 'Household', 'Personal Care', 'Food'];
 
   // Caching logic
   useEffect(() => {
@@ -132,8 +132,8 @@ const Products: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">Our Collection</h1>
-            <p className="text-gray-600">Discover our exclusive jewelry collection</p>
+            <h1 className="text-3xl font-bold mb-2">Our Products</h1>
+            <p className="text-gray-600">Discover our exclusive products</p>
           </div>
           
           <div className="flex items-center gap-4">
@@ -211,7 +211,7 @@ const Products: React.FC = () => {
     Add Additional Quantity
   </button>
 ) : (
-  <button className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">
+  <button className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-red-700 transition-colors">
     Add to Cart
   </button>
 )}

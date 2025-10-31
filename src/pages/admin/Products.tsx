@@ -53,54 +53,54 @@ export default function Products() {
       <Route
         path="/"
         element={
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">Products</h1>
+          <div className="container-fluid">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">Products</h1>
+                <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-400 rounded-full"></div>
+              </div>
               <button
                 onClick={() => navigate('new')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700"
+                className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-lg flex items-center space-x-2 hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
               >
                 <Plus className="h-5 w-5" />
                 <span>Add Product</span>
               </button>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm mb-6">
-              <div className="p-4 border-b">
+            <div className="bg-white rounded-xl shadow-lg border border-yellow-200 mb-8">
+              <div className="p-6 border-b border-yellow-100">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red-400 h-5 w-5" />
                   <input
                     type="text"
                     placeholder="Search products..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-10 w-full p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 hover:border-yellow-400"
                   />
                 </div>
               </div>
 
               {loading ? (
                 <div className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mx-auto"></div>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <tr className="bg-gradient-to-r from-yellow-50 to-red-50">
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Product
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Category
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Price
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Inventory
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
@@ -125,29 +125,30 @@ export default function Products() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-red-700 border border-yellow-200">
                               {product.category}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             ₱{typeof product.price === 'number' ? product.price.toLocaleString('en-PH', { minimumFractionDigits: 2 }) : ''}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product.inventory}
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => navigate(`edit/${product.id}`)}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
-                            >
-                              <Edit className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(product.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </button>
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => navigate(`edit/${product.id}`)}
+                                className="p-2 text-yellow-600 hover:text-white hover:bg-yellow-500 rounded-lg transition-all duration-200"
+                                title="Edit Product"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(product.id)}
+                                className="p-2 text-red-600 hover:text-white hover:bg-red-500 rounded-lg transition-all duration-200"
+                                title="Delete Product"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

@@ -72,27 +72,17 @@ const Registration: React.FC = () => {
       style={{
         minHeight: '100vh',
         width: '100%',
-        background: 'linear-gradient(120deg, #f8e7f7 0%, #e8eaf6 100%)',
+       
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
         overflow: 'hidden',
+        
+        
       }}
     >
-      {/* Decorative Sparkle or Gem Icon */}
-      <div style={{
-        position: 'absolute',
-        top: 40,
-        left: 40,
-        fontSize: 48,
-        color: '#e0b973',
-        opacity: 0.18,
-        pointerEvents: 'none',
-        zIndex: 1,
-      }}>
-        <span role="img" aria-label="gem">💎</span>
-      </div>
+      
       {/* Logo */}
       <div style={{
         position: 'absolute',
@@ -103,10 +93,10 @@ const Registration: React.FC = () => {
         zIndex: 2,
       }}>
         <img
-          src="../images/new2.png"
-          alt="Amethyst Jewelry Shop Logo"
-          width={90}
-          height={90}
+          src="../images/gds-logo.png"
+          alt="GDS Budgetarian Logo"
+          width={150}
+          height={150}
           style={{ filter: 'drop-shadow(0 4px 8px #e0b97355)', borderRadius: '50%', background: 'rgba(255,255,255,0.7)' }}
         />
       </div>
@@ -129,12 +119,12 @@ const Registration: React.FC = () => {
           style={{
             marginBottom: 28,
             textAlign: 'center',
-            color: '#a084ca',
+            color: '#e53e3e',
             fontSize: '2rem',
             letterSpacing: '2px',
             fontFamily: 'serif',
             fontWeight: 700,
-            textShadow: '0 2px 8px #e0b97333',
+            textShadow: '0 2px 8px #ecc94b33',
           }}
         >
           Create Your Account
@@ -151,12 +141,12 @@ const Registration: React.FC = () => {
               marginBottom: 16,
               padding: '12px',
               borderRadius: 8,
-              border: '1px solid #e0b973',
+              border: '1px solid #ecc94b',
               backgroundColor: 'rgba(255,255,255,0.95)',
               fontSize: '1rem',
               fontFamily: 'serif',
               color: '#7d5a5a',
-              boxShadow: '0 1px 4px #e0b97311',
+              boxShadow: '0 1px 4px #ecc94b11',
               outline: 'none',
               transition: 'border 0.2s',
             }}
@@ -173,12 +163,12 @@ const Registration: React.FC = () => {
               marginBottom: 16,
               padding: '12px',
               borderRadius: 8,
-              border: '1px solid #e0b973',
+              border: '1px solid #ecc94b',
               backgroundColor: 'rgba(255,255,255,0.95)',
               fontSize: '1rem',
               fontFamily: 'serif',
               color: '#7d5a5a',
-              boxShadow: '0 1px 4px #e0b97311',
+              boxShadow: '0 1px 4px #ecc94b11',
               outline: 'none',
               transition: 'border 0.2s',
             }}
@@ -195,12 +185,12 @@ const Registration: React.FC = () => {
               marginBottom: 16,
               padding: '12px',
               borderRadius: 8,
-              border: '1px solid #e0b973',
+              border: '1px solid #ecc94b',
               backgroundColor: 'rgba(255,255,255,0.95)',
               fontSize: '1rem',
               fontFamily: 'serif',
               color: '#7d5a5a',
-              boxShadow: '0 1px 4px #e0b97311',
+              boxShadow: '0 1px 4px #ecc94b11',
               outline: 'none',
               transition: 'border 0.2s',
             }}
@@ -217,12 +207,12 @@ const Registration: React.FC = () => {
               marginBottom: 16,
               padding: '12px',
               borderRadius: 8,
-              border: '1px solid #e0b973',
+              border: '1px solid #ecc94b',
               backgroundColor: 'rgba(255,255,255,0.95)',
               fontSize: '1rem',
               fontFamily: 'serif',
               color: '#7d5a5a',
-              boxShadow: '0 1px 4px #e0b97311',
+              boxShadow: '0 1px 4px #ecc94b11',
               outline: 'none',
               transition: 'border 0.2s',
             }}
@@ -239,12 +229,12 @@ const Registration: React.FC = () => {
               marginBottom: 18,
               padding: '12px',
               borderRadius: 8,
-              border: '1px solid #e0b973',
+              border: '1px solid #ecc94b',
               backgroundColor: 'rgba(255,255,255,0.95)',
               fontSize: '1rem',
               fontFamily: 'serif',
               color: '#7d5a5a',
-              boxShadow: '0 1px 4px #e0b97311',
+              boxShadow: '0 1px 4px #ecc94b11',
               outline: 'none',
               transition: 'border 0.2s',
             }}
@@ -256,7 +246,7 @@ const Registration: React.FC = () => {
             style={{
               width: '100%',
               padding: '13px',
-              background: 'linear-gradient(90deg, #a084ca 0%, #e0b973 100%)',
+              background: 'linear-gradient(90deg, #e53e3e 0%, #ecc94b 100%)',
               color: '#fff',
               border: 'none',
               borderRadius: 8,
@@ -276,7 +266,7 @@ const Registration: React.FC = () => {
         {error && (
           <div
             style={{
-              color: '#a084ca',
+              color: '#e53e3e',
               background: '#fff6e7',
               marginTop: 18,
               textAlign: 'center',
@@ -285,7 +275,7 @@ const Registration: React.FC = () => {
               fontWeight: 500,
               fontFamily: 'serif',
               fontSize: '1rem',
-              boxShadow: '0 1px 4px #e0b97311',
+              boxShadow: '0 1px 4px #ecc94b11',
             }}
           >
             {error}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Menu, ListOrdered } from 'lucide-react';
+import { ShoppingCart, User, ListOrdered } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCartStore } from '../store/useCartStore';
 import { useRef, useState } from 'react';
@@ -58,36 +58,40 @@ export default function Navbar() {
   const cartItemsCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <nav className="bg-white shadow-lg">
+    <nav className="bg-yellow-500 shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {(!user || user.role !== 'admin') && (
+          {(!user || (user.role !== 'admin' && user.role !== 'staff')) && (
             <Link to="/" className="flex items-center space-x-2">
-              <img src="/images/new2.png" alt="Logo" className="h-10 w-10 object-contain" />
-              <span className="text-2xl font-bold text-gray-800">Amethyst Shop</span>
+              <img src="/images/logo2.png" alt="Logo" className="h-150 w-10 object-contain rounded-full" />
+              <span className="text-2xl font-bold text-red-600">GDS Budgetarian</span>
             </Link>
           )}
 
-          {/* Show Admin link if admin, otherwise regular links */}
+          {/* Show Admin/Staff links based on role */}
           {user && user.role === 'admin' ? (
-            <Link to="/admin/dashboard" className="text-gray-600 hover:text-purple-600 transition-colors">
-              Admin
+            <Link to="/admin/dashboard" className="text-gray-600 hover:text-primary transition-colors">
+              Admin Dashboard
+            </Link>
+          ) : user && user.role === 'staff' ? (
+            <Link to="/staff" className="text-gray-600 hover:text-primary transition-colors">
+              Staff Dashboard
             </Link>
           ) : (
             <div className="hidden md:flex items-center space-x-8"></div>
           )}
 
           <div className="flex items-center space-x-6">
-            {(!user || user.role !== 'admin') && (
+            {(!user || (user.role !== 'admin' && user.role !== 'staff')) && (
               <>
-                <Link to="/orders" className="flex items-center space-x-1 text-gray-600 hover:text-purple-600 transition-colors">
+                <Link to="/orders" className="flex items-center space-x-1 text-gray-600 hover:text-primary transition-colors">
                   <ListOrdered className="h-6 w-6" />
                   <span className="hidden md:inline text-sm font-medium">Orders</span>
                 </Link>
                 <Link to="/cart" className="relative">
-                  <ShoppingCart className="h-6 w-6 text-gray-600 hover:text-purple-600 transition-colors" />
+                  <ShoppingCart className="h-6 w-6 text-gray-600 hover:text-primary transition-colors" />
                   {cartItemsCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                       {cartItemsCount}
                     </span>
                   )}
@@ -100,7 +104,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   to="/login"
-                  className="flex items-center gap-2 px-4 py-2 text-purple-700 hover:text-purple-900 border border-purple-200 rounded-md transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 border border-yellow-400 rounded-md transition-colors"
                 >
                   <User className="w-5 h-5" />
                   <span className="text-sm font-medium">Login</span>

@@ -5,9 +5,10 @@ import { useAuthStore } from '../store/useAuthStore';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   adminOnly?: boolean;
+  staffOnly?: boolean;
 }
 
-export default function ProtectedRoute({ children, adminOnly = false }: ProtectedRouteProps) {
+export default function ProtectedRoute({ children, adminOnly = false, staffOnly = false }: ProtectedRouteProps) {
   const { user, loading } = useAuthStore();
 
   if (loading) {
@@ -23,6 +24,10 @@ export default function ProtectedRoute({ children, adminOnly = false }: Protecte
   }
 
   if (adminOnly && user.role !== 'admin') {
+    return <Navigate to="/" />;
+  }
+
+  if (staffOnly && user.role !== 'staff') {
     return <Navigate to="/" />;
   }
 
