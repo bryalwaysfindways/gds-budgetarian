@@ -68,8 +68,9 @@ function NotificationDropdown() {
       });
     }
 
-    // Navigate to order details with orderId in state
-    navigate(`/admin/orders`, { state: { orderId: notification.orderId } });
+    // Navigate to appropriate route based on user role with orderId in state
+    const targetRoute = user?.role === 'staff' ? '/staff' : '/admin/orders';
+    navigate(targetRoute, { state: { orderId: notification.orderId } });
     setOpen(false);
   };
 

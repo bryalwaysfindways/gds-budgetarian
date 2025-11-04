@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Product } from '../../types';
-import { X } from 'lucide-react';
+import { X, Upload, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { uploadImage, deleteImage, validateImageFile } from '../../lib/imageUpload';
 
 const groceryCategories = [
   { name: 'Fresh Produce', icon: '🥬' },
@@ -24,7 +25,10 @@ export default function ProductForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState('');
+  const [fetchingProduct, setFetchingProduct] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [product, setProduct] = useState<Partial<Product>>({
     name: '',
     description: '',
@@ -44,33 +48,96 @@ export default function ProductForm() {
   }, [id]);
 
   const fetchProduct = async () => {
+    setFetchingProduct(true);
     try {
       const docRef = doc(db, 'products', id!);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setProduct({ id, ...docSnap.data() } as Product);
+      } else {
+        toast.error('Product not found');
+        navigate('/admin/products');
       }
     } catch (error) {
+      console.error('Error fetching product:', error);
       toast.error('Failed to fetch product');
       navigate('/admin/products');
+    } finally {
+      setFetchingProduct(false);
     }
   };
 
-  const handleAddImage = () => {
-    if (imageUrl.trim()) {
-      setProduct((prev) => ({
-        ...prev,
-        images: [...(prev.images || []), imageUrl.trim()],
-      }));
-      setImageUrl('');
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    // Validate all files first
+    const validationErrors: string[] = [];
+    const validFiles: File[] = [];
+
+    Array.from(files).forEach((file) => {
+      const validation = validateImageFile(file);
+      if (validation.isValid) {
+        validFiles.push(file);
+      } else {
+        validationErrors.push(`${file.name}: ${validation.error}`);
+      }
+    });
+
+    // Show validation errors
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors.join('\n'));
+    }
+
+    // Upload valid files
+    if (validFiles.length > 0) {
+      setUploading(true);
+      setUploadProgress(0);
+
+      try {
+        const uploadPromises = validFiles.map((file) =>
+          uploadImage(file, 'products', (progress) => {
+            setUploadProgress(progress);
+          })
+        );
+
+        const urls = await Promise.all(uploadPromises);
+
+        setProduct((prev) => ({
+          ...prev,
+          images: [...(prev.images || []), ...urls],
+        }));
+
+        toast.success(`${urls.length} image(s) uploaded successfully`);
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error('Failed to upload images');
+      } finally {
+        setUploading(false);
+        setUploadProgress(0);
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
     }
   };
 
-  const handleRemoveImage = (index: number) => {
+  const handleRemoveImage = async (index: number, imageUrl: string) => {
+    // Remove from product images array
     setProduct((prev) => ({
       ...prev,
       images: prev.images?.filter((_, i) => i !== index),
     }));
+
+    // Delete from Firebase Storage (only if it's a Firebase Storage URL)
+    if (imageUrl.includes('firebasestorage.googleapis.com')) {
+      try {
+        await deleteImage(imageUrl);
+      } catch (error) {
+        console.error('Error deleting image:', error);
+      }
+    }
   };
 
   const validate = () => {
@@ -96,18 +163,26 @@ export default function ProductForm() {
         price: Number(product.price),
         isSale: !!product.isSale,
         isFeatured: !!product.isFeatured,
-        createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       if (id) {
+        // Editing existing product - preserve createdAt
         const docRef = doc(db, 'products', id);
-        await setDoc(docRef, productData);
+        await setDoc(docRef, {
+          ...productData,
+          // Keep original createdAt from fetched product
+          createdAt: product.createdAt || new Date(),
+        });
         toast.success('Product updated successfully');
       } else {
+        // Creating new product - set createdAt
         const productsRef = collection(db, 'products');
         const newDocRef = doc(productsRef);
-        await setDoc(newDocRef, productData);
+        await setDoc(newDocRef, {
+          ...productData,
+          createdAt: new Date(),
+        });
         toast.success('Product created successfully');
       }
 
@@ -119,6 +194,18 @@ export default function ProductForm() {
       setLoading(false);
     }
   };
+
+  // Show loading spinner while fetching product data in edit mode
+  if (fetchingProduct) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-red-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading product data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-red-50">
@@ -241,47 +328,96 @@ export default function ProductForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Images
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Product Images
             </label>
-            <div className="flex flex-wrap gap-4 mb-4">
-              {product.images?.map((url, index) => (
-                <div
-                  key={index}
-                  className="relative w-24 h-24 border rounded-lg overflow-hidden"
-                >
-                  <img
-                    src={url}
-                    alt={`Product ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+
+            {/* Image Preview Grid */}
+            {product.images && product.images.length > 0 && (
+              <div className="flex flex-wrap gap-4 mb-4">
+                {product.images.map((url, index) => (
+                  <div
+                    key={index}
+                    className="relative w-32 h-32 border-2 border-yellow-200 rounded-lg overflow-hidden group hover:border-red-400 transition-all duration-200"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
+                    <img
+                      src={url}
+                      alt={`Product ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index, url)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                      title="Remove image"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <p className="text-white text-xs text-center">Image {index + 1}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* File Upload Area */}
+            <div
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              className={`border-2 border-dashed border-yellow-300 rounded-lg p-6 text-center hover:border-red-400 transition-all duration-200 bg-yellow-50/30 ${uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
               <input
-                type="url"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="Enter image URL"
-                className="flex-1 p-3 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 hover:border-yellow-400"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+                id="image-upload"
+                disabled={uploading}
               />
-              <button
-                type="button"
-                onClick={handleAddImage}
-                className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                Add Image
-              </button>
+              <div className="flex flex-col items-center space-y-3">
+                {uploading ? (
+                  <>
+                    <Upload className="h-12 w-12 text-red-400 animate-bounce" />
+                    <div className="w-full max-w-xs">
+                      <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-red-500 to-yellow-400 h-full transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Uploading... {Math.round(uploadProgress)}%
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="h-12 w-12 text-red-400" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-700">
+                        Click to upload images or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF or WebP (max 5MB per image)
+                      </p>
+                    </div>
+                    <div
+                      className="mt-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+                    >
+                      Select Images
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-            {errors.images && <p className="text-red-500 text-xs mt-1">{errors.images}</p>}
+            {errors.images && <p className="text-red-500 text-xs mt-2">{errors.images}</p>}
+            {product.images && product.images.length > 0 && (
+              <p className="text-sm text-gray-600 mt-2">
+                {product.images.length} image(s) added
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end space-x-4">

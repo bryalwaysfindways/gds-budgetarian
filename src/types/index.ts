@@ -6,6 +6,7 @@ export interface User {
   addresses: Address[];
   phone?: string;
   emailVerified?: boolean;
+  address?: string; // Simple address field from registration
 }
 
 export interface Product {

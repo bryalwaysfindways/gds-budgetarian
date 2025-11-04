@@ -11,6 +11,7 @@ const Registration: React.FC = () => {
     username: '',
     email: '',
     phone: '+63',
+    address: '',
     password: '',
     confirmPassword: ''
   });
@@ -74,6 +75,7 @@ const Registration: React.FC = () => {
         email: formData.email,
         name: formData.username,
         phone: formData.phone,
+        address: formData.address,
         role: 'user',
         addresses: [],
         emailVerified: false,
@@ -247,6 +249,28 @@ const Registration: React.FC = () => {
             placeholder="Phone Number (+63XXXXXXXXXX)"
             value={formData.phone}
             onChange={handlePhoneChange}
+            style={{
+              width: '100%',
+              marginBottom: 16,
+              padding: '12px',
+              borderRadius: 8,
+              border: '1px solid #ecc94b',
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              fontSize: '1rem',
+              fontFamily: 'serif',
+              color: '#7d5a5a',
+              boxShadow: '0 1px 4px #ecc94b11',
+              outline: 'none',
+              transition: 'border 0.2s',
+            }}
+            required
+          />
+          <input
+            type="text"
+            name="address"
+            placeholder="Complete Address"
+            value={formData.address}
+            onChange={handleChange}
             style={{
               width: '100%',
               marginBottom: 16,

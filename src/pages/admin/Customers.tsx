@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { User } from '../../types';
+import { User, Order } from '../../types';
 import { Search, Mail, Phone, X, User as UserIcon, MapPin, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -12,7 +12,67 @@ interface CustomerDetailsModalProps {
   onClose: () => void;
 }
 
+interface ShippingAddress {
+  address: string;
+  city: string;
+  zipCode: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+}
+
 const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ customer, isOpen, onClose }) => {
+  const [shippingAddresses, setShippingAddresses] = useState<ShippingAddress[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+
+  // Fetch shipping addresses from orders when modal opens
+  useEffect(() => {
+    if (isOpen && customer) {
+      fetchShippingAddresses();
+    }
+  }, [isOpen, customer]);
+
+  const fetchShippingAddresses = async () => {
+    if (!customer) return;
+
+    setLoadingAddresses(true);
+    try {
+      // Query orders for this customer
+      const ordersQuery = query(collection(db, 'orders'), where('userId', '==', customer.id));
+      const ordersSnapshot = await getDocs(ordersQuery);
+
+      const addresses: ShippingAddress[] = [];
+      const addressSet = new Set<string>(); // To track unique addresses
+
+      ordersSnapshot.forEach((doc) => {
+        const orderData = doc.data() as any;
+
+        // Create a unique key for the address
+        const addressKey = `${orderData.address || ''}_${orderData.city || ''}_${orderData.zipCode || ''}`.toLowerCase();
+
+        // Only add if we haven't seen this address before
+        if (!addressSet.has(addressKey) && (orderData.address || orderData.city)) {
+          addressSet.add(addressKey);
+          addresses.push({
+            address: orderData.address || '',
+            city: orderData.city || '',
+            zipCode: orderData.zipCode || '',
+            phone: orderData.phone || customer.phone || '',
+            firstName: orderData.firstName || '',
+            lastName: orderData.lastName || ''
+          });
+        }
+      });
+
+      setShippingAddresses(addresses);
+    } catch (error) {
+      console.error('Error fetching shipping addresses:', error);
+      toast.error('Failed to load shipping addresses');
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
   if (!isOpen || !customer) return null;
 
   return (
@@ -59,38 +119,60 @@ const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({ customer, i
             </div>
           </div>
           
-          {/* Phone Number - Optional */}
+          {/* Contact Information */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <Phone className="mr-2 h-5 w-5 text-blue-600" />
               Contact Information
             </h3>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-500">Phone Number</p>
-              <p className="font-medium">
-                {customer.phone || 'No phone number provided'}
-              </p>
+            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+              <div>
+                <p className="text-sm text-gray-500">Phone Number</p>
+                <p className="font-medium">
+                  {customer.phone || 'No phone number provided'}
+                </p>
+              </div>
+              {customer.address && (
+                <div>
+                  <p className="text-sm text-gray-500">Address</p>
+                  <p className="font-medium">
+                    {customer.address}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Addresses */}
+          {/* Shipping Addresses */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
               <MapPin className="mr-2 h-5 w-5 text-blue-600" />
-              Addresses
+              Shipping Addresses
             </h3>
-            {customer.addresses && customer.addresses.length > 0 ? (
+            {loadingAddresses ? (
+              <div className="bg-gray-50 p-4 rounded-lg text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-sm text-gray-500 mt-2">Loading addresses...</p>
+              </div>
+            ) : shippingAddresses.length > 0 ? (
               <div className="space-y-4">
-                {customer.addresses.map((address, index) => (
-                  <div key={address.id || index} className="bg-gray-50 p-4 rounded-lg">
+                {shippingAddresses.map((address, index) => (
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between">
-                      <h4 className="font-medium text-gray-800">{address.name || `Address ${index + 1}`}</h4>
-                      <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">{address.type}</span>
+                      <h4 className="font-medium text-gray-800">
+                        {address.firstName && address.lastName
+                          ? `${address.firstName} ${address.lastName}`
+                          : `Address ${index + 1}`}
+                      </h4>
+                      <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">Shipping</span>
                     </div>
                     <p className="text-gray-600 mt-2">
-                      {address.street}<br />
-                      {address.city}, {address.state} {address.postalCode}<br />
-                      {address.country}
+                      {address.address && <>{address.address}<br /></>}
+                      {address.city && address.zipCode && (
+                        <>{address.city}, {address.zipCode}</>
+                      )}
+                      {address.city && !address.zipCode && address.city}
+                      {!address.city && address.zipCode && address.zipCode}
                     </p>
                     {address.phone && (
                       <p className="text-gray-600 mt-2">
@@ -257,6 +339,8 @@ export default function Customers() {
                             {address.postalCode || ''}
                           </div>
                         ))
+                      ) : customer.address ? (
+                        <span className="text-sm text-gray-500">{customer.address}</span>
                       ) : (
                         <span className="text-sm text-gray-400 italic">No addresses</span>
                       )}

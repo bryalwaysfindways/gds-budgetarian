@@ -345,15 +345,31 @@ VITE_EMAILJS_PUBLIC_KEY=your_public_key
 
 See `EMAILJS_SETUP_GUIDE.md` for complete EmailJS setup instructions.
 
+## Product Management
+
+**Image Upload System** (`src/lib/imageUpload.ts`):
+- Direct file upload from device to Firebase Storage
+- Multiple image selection support
+- Real-time upload progress tracking
+- Automatic image validation (max 5MB, JPG/PNG/GIF/WebP)
+- Automatic cleanup when images are removed
+- Images stored in `products/` folder in Firebase Storage
+
+**Product Form** (`src/pages/admin/ProductForm.tsx`):
+- Unified form for both Add and Edit operations
+- Edit mode: Fetches existing product data with loading state
+- Add new images: Uploads to Firebase Storage and appends to existing images
+- Remove images: Deletes from both product and Firebase Storage
+- Preserves `createdAt` timestamp when updating products
+- Image preview grid with hover effects and remove buttons
+
 ## Known Limitations
 
 1. **Stripe Integration**: Package installed but unused - payments hardcoded to COD/GCash
-2. **Staff Dashboard**: Placeholder with no implementation
-3. **ProductContext**: Could be migrated to Zustand store
-4. **Image Upload**: Uses external URLs only, no Firebase Storage upload UI
-5. **Inventory Tracking**: Not actively enforced during cart operations
-6. **Pagination**: No pagination on product list (loads all products)
-7. **Order Emails**: Email verification implemented, but order confirmation emails not yet added
+2. **ProductContext**: Could be migrated to Zustand store
+3. **Inventory Tracking**: Not actively enforced during cart operations
+4. **Pagination**: No pagination on product list (loads all products)
+5. **Order Emails**: Email verification implemented, but order confirmation emails not yet added
 
 ## Deployment
 
