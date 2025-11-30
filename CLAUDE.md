@@ -34,6 +34,9 @@ npm run preview
 npm run lint
 ```
 
+**Note**: The project uses Bun as the package manager (see `bun.lock` in git). You can use `npm` or `bun` interchangeably.
+Testing is configured with `@testing-library/react` and `@testing-library/user-event` but no test runner is set up yet. To add tests, configure Jest or Vitest as needed.
+
 ## Architecture Overview
 
 ### State Management Strategy
@@ -316,6 +319,30 @@ React Router v6 configuration in `src/App.tsx`:
 
 **No centralized data fetching** - each page owns its Firestore queries.
 
+## Role-Based UI Patterns
+
+**User Roles and Access**:
+- `'user'` (customer): Access to `/`, `/products`, `/cart`, `/checkout`, `/orders`, `/profile`
+- `'admin'`: Full access plus `/admin/*` dashboard
+- `'staff'`: Full access plus `/staff/*` dashboard
+
+**Protected Route Implementation** (`src/components/ProtectedRoute.tsx`):
+- Use `adminOnly` prop to block non-admins from `/admin/*` routes
+- Use `staffOnly` prop to block non-staff from `/staff/*` routes
+- Shows loading spinner while auth state initializes (`useAuthStore.loading`)
+- Redirects unauthenticated users to `/login`
+
+**Admin vs Staff Distinction**:
+- **Admin** (`src/pages/admin/`): Full product/customer/analytics management, role assignment
+- **Staff** (`src/pages/staff/Dashboard.tsx`): Order fulfillment and delivery tracking only
+- Both use `AdminHeader` component for consistent UI
+- Both see real-time notifications when orders are placed
+
+**Role Assignment**:
+- Default new users get `'user'` role
+- Admins can change user roles in `/admin/roles` using `RoleManagement.tsx`
+- Roles stored in Firestore `users` collection
+
 ## Naming Conventions
 
 - **Pages**: PascalCase (e.g., `ProductDetail.tsx`)
@@ -363,13 +390,52 @@ See `EMAILJS_SETUP_GUIDE.md` for complete EmailJS setup instructions.
 - Preserves `createdAt` timestamp when updating products
 - Image preview grid with hover effects and remove buttons
 
+## Cart Persistence & Data Flow
+
+**Important Implementation Details**:
+
+1. **Cart Storage**: Uses Zustand's `persist` middleware with localStorage key `'cart-storage'`
+   - Cart persists across page refreshes and browser sessions
+   - Auto-clears when checkout succeeds
+   - Data structure: `{ productId, variantId, quantity, price }`
+
+2. **Auth Sync**: User data flows from Firebase → Zustand `useAuthStore`
+   - `AuthProvider` listens to `onAuthStateChanged()`
+   - Auto-creates missing Firestore user docs
+   - Auth store has `loading` flag during initialization (important for protected routes)
+
+3. **Product Caching**: 5-minute localStorage TTL cache exists for product list optimization
+
+## Debugging & Common Issues
+
+**Firebase Connection Problems**:
+- Check that Firebase credentials in `src/lib/firebase.ts` are correct
+- Ensure Firestore Security Rules allow reads/writes for your test user
+- Check browser console for Firebase error messages
+
+**Email Verification Not Working**:
+- Verify `.env` has all three EmailJS variables set
+- Check EmailJS dashboard for failed email sends
+- Tokens expire after 24 hours - users need to register again for new token
+
+**Auth State Not Persisting**:
+- Check that `AuthProvider` is wrapping the entire app in `src/App.tsx`
+- Verify Firestore `users` collection exists and has proper rules
+- Check `useAuthStore` loading flag - wait for it to be false before rendering protected content
+
+**Cart Empty After Reload**:
+- Check browser allows localStorage (not in private/incognito mode)
+- Verify localStorage key is `'cart-storage'` (not changed in `useCartStore`)
+- Check browser console for quota exceeded errors
+
 ## Known Limitations
 
 1. **Stripe Integration**: Package installed but unused - payments hardcoded to COD/GCash
-2. **ProductContext**: Could be migrated to Zustand store
-3. **Inventory Tracking**: Not actively enforced during cart operations
-4. **Pagination**: No pagination on product list (loads all products)
-5. **Order Emails**: Email verification implemented, but order confirmation emails not yet added
+2. **ProductContext**: Could be migrated to Zustand store for better state management
+3. **Inventory Tracking**: Not actively enforced during cart operations (no stock validation)
+4. **Pagination**: No pagination on product list (loads all products into memory)
+5. **Order Confirmation Emails**: Email verification implemented, but order confirmation emails not yet added
+6. **No Test Runner**: Testing libraries installed but no test configuration or runner set up
 
 ## Deployment
 

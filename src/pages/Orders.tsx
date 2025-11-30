@@ -1,10 +1,11 @@
 // Orders.tsx - List all placed orders from Firestore
 import React, { useEffect, useState } from 'react';
 import ReviewModal from '../components/ReviewModal';
+import toast from 'react-hot-toast';
 import { db } from '../lib/firebase';
-import { collection, getDocs, QueryDocumentSnapshot, DocumentData, addDoc, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, QueryDocumentSnapshot, DocumentData, addDoc, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuthStore } from '../store/useAuthStore';
-import { Clock, Package, Truck, CheckCircle, AlertCircle, History as HistoryIcon, Eye, X } from 'lucide-react';
+import { Clock, Package, Truck, CheckCircle, AlertCircle, History as HistoryIcon, Eye, X, Trash2 } from 'lucide-react';
 
 interface StatusHistory {
   status: string;
@@ -45,6 +46,9 @@ const Orders: React.FC = () => {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedOrderForDetails, setSelectedOrderForDetails] = useState<Order | null>(null);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -105,6 +109,24 @@ const Orders: React.FC = () => {
     return date.toLocaleString('en-PH');
   }
 
+  const handleCancelOrder = async () => {
+    if (!orderToCancel) return;
+
+    setCancelling(true);
+    try {
+      await deleteDoc(doc(db, 'orders', orderToCancel.id));
+      setOrders(prevOrders => prevOrders.filter(o => o.id !== orderToCancel.id));
+      toast.success('Order cancelled successfully');
+      setCancelConfirmOpen(false);
+      setOrderToCancel(null);
+    } catch (err) {
+      console.error('Error cancelling order:', err);
+      toast.error('Failed to cancel order. Please try again.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen">
       <h1 className="text-3xl font-bold mb-8">My Orders</h1>
@@ -150,22 +172,38 @@ const Orders: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-3 border-t border-gray-200">
-                  <button
-                    onClick={() => {
-                      setSelectedOrderForDetails(order);
-                      setDetailsModalOpen(true);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Details
-                  </button>
+                <div className="flex flex-col gap-2 pt-3 border-t border-gray-200">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedOrderForDetails(order);
+                        setDetailsModalOpen(true);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Details
+                    </button>
+
+                    {order.status === 'pending' && (
+                      <button
+                        onClick={() => {
+                          setOrderToCancel(order);
+                          setCancelConfirmOpen(true);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition"
+                        title="Cancel and delete this order"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Cancel
+                      </button>
+                    )}
+                  </div>
 
                   {order.status === 'delivered' && (
                     order.isReceived ? (
                       <button
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
                         onClick={() => {
                           setSelectedOrderId(order.id);
                           setReviewModalOpen(true);
@@ -175,7 +213,7 @@ const Orders: React.FC = () => {
                       </button>
                     ) : (
                       <button
-                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
+                        className="w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
                         onClick={async () => {
                           try {
                             const orderRef = doc(db, 'orders', order.id);
@@ -254,6 +292,21 @@ const Orders: React.FC = () => {
                         >
                           <HistoryIcon className="w-3 h-3" />
                           {expandedOrderId === order.id ? 'Hide' : 'View'} History
+                        </button>
+                      )}
+
+                      {/* Cancel Button for Pending Orders */}
+                      {order.status === 'pending' && (
+                        <button
+                          className="mt-1 px-3 py-0.5 rounded bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition flex items-center gap-1"
+                          onClick={() => {
+                            setOrderToCancel(order);
+                            setCancelConfirmOpen(true);
+                          }}
+                          title="Cancel and delete this order"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Cancel
                         </button>
                       )}
 
@@ -617,6 +670,68 @@ const Orders: React.FC = () => {
             setReviewModalOpen(false);
           }}
         />
+      )}
+
+      {/* Cancel Order Confirmation Modal */}
+      {cancelConfirmOpen && orderToCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
+            {/* Modal Header */}
+            <div className="border-b border-gray-200 p-4">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                Cancel Order
+              </h2>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4">
+              <p className="text-gray-700 mb-2">
+                Are you sure you want to cancel this order?
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                Order ID: <span className="font-mono font-semibold">{orderToCancel.id.substring(0, 12)}...</span>
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-xs text-red-800 mb-2 font-semibold">⚠️ This action cannot be undone</p>
+                <p className="text-xs text-red-700">
+                  The order will be permanently deleted and staff/admin will not be able to process it.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-200 p-4 flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setCancelConfirmOpen(false);
+                  setOrderToCancel(null);
+                }}
+                disabled={cancelling}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={handleCancelOrder}
+                disabled={cancelling}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition disabled:opacity-50 flex items-center gap-2"
+              >
+                {cancelling ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Yes, Cancel Order
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
