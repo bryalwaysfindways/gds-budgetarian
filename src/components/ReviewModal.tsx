@@ -11,7 +11,8 @@ interface ReviewModalProps {
   order?: any;
 }
 
-const ReviewModal: React.FC<ReviewModalProps> = ({ open, onClose, onSubmit, orderId, order }) => {
+const ReviewModal: React.FC<ReviewModalProps> = ({ open, onClose, //onSubmit,
+   orderId, order }) => {
   const { user } = useAuthStore();
   const [rating, setRating] = useState(0);
   const [description, setDescription] = useState('');
