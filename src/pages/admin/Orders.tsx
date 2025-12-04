@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -5,7 +6,7 @@ import toast from 'react-hot-toast';
 import {
   Package,
   TrendingUp,
-  DollarSign,
+  Banknote,
   ShoppingCart,
   Calendar,
   Users,
@@ -298,7 +299,7 @@ export default function Orders() {
               </p>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
-              <DollarSign className="w-8 h-8 text-green-600" />
+              <Banknote className="w-8 h-8 text-green-600" />
             </div>
           </div>
         </div>
@@ -813,12 +814,7 @@ export default function Orders() {
                       ₱{(selectedOrder.subtotal || selectedOrder.total - 99).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Shipping Fee:</span>
-                    <span className="font-medium">
-                      ₱{(selectedOrder.shippingCost || 99).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
+                  
                   <div className="flex justify-between pt-2 border-t">
                     <span className="font-bold text-lg">Total:</span>
                     <span className="font-bold text-xl text-red-600">

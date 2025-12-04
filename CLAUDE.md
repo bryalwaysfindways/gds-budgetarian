@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-GDS Budgetarian is a full-stack e-commerce application for grocery/budget shopping with multi-role support (customer, admin, staff). Built with React 18, TypeScript, Vite, and Firebase.
+GDS Budgetarian is a full-stack food web application for snacks/budget shopping with multi-role support (customer, admin, staff). Built with React 18, TypeScript, Vite, and Firebase.
 
 **Tech Stack:**
 - Frontend: React 18 + TypeScript + Vite

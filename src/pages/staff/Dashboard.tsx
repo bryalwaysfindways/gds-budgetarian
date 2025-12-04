@@ -531,10 +531,7 @@ export default function StaffDashboard() {
                             <p className="text-gray-600">Subtotal:</p>
                             <p className="font-medium">₱{(order.subtotal || order.total - 99).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
                           </div>
-                          <div className="flex justify-between text-sm">
-                            <p className="text-gray-600">Shipping Fee:</p>
-                            <p className="font-medium">₱{(order.shippingCost || 99).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
-                          </div>
+                          
                           <div className="flex justify-between pt-2 border-t border-gray-200">
                             <p className="font-bold text-lg">Total:</p>
                             <p className="font-bold text-xl text-red-600">₱{order.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
@@ -818,10 +815,7 @@ export default function StaffDashboard() {
                     <p className="text-gray-600">Subtotal:</p>
                     <p className="font-medium">₱{(selectedOrderForModal.subtotal || selectedOrderForModal.total - 99).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <p className="text-gray-600">Shipping Fee:</p>
-                    <p className="font-medium">₱{(selectedOrderForModal.shippingCost || 99).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
-                  </div>
+                  
                   <div className="flex justify-between pt-2 border-t border-gray-200">
                     <p className="font-bold text-lg">Total:</p>
                     <p className="font-bold text-xl text-red-600">₱{selectedOrderForModal.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>

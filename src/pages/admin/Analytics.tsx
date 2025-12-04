@@ -3,7 +3,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Order, Product } from '../../types';
 import { getAuth } from 'firebase/auth';
-import { DollarSign, ShoppingBag, Users, TrendingUp, FileDown } from 'lucide-react';
+import { Banknote, ShoppingBag, Users, TrendingUp, FileDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
 
@@ -311,7 +311,7 @@ export default function Analytics() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-md p-5 md:p-6 flex items-center gap-4 border-l-4 border-purple-500">
           <div className="bg-purple-100 p-3 rounded-full flex-shrink-0">
-            <DollarSign className="h-6 w-6 text-purple-600" />
+            <Banknote className="h-6 w-6 text-purple-600" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-gray-500 text-xs font-semibold uppercase mb-1">Total Revenue</div>

@@ -37,8 +37,8 @@ const Cart: React.FC = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const tax = subtotal * 0.1; // 10% tax
-  const total = subtotal + tax;
+
+  const total = subtotal ;
 
 
   return (
@@ -120,10 +120,7 @@ const Cart: React.FC = () => {
                 <span>Subtotal</span>
                 <span>{`₱${subtotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Tax (10%)</span>
-                <span>{`₱${tax.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}</span>
-              </div>
+              
               <div className="border-t pt-2 mt-2 font-semibold text-black flex justify-between">
                 <span>Total</span>
                 <span>{`₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}</span>

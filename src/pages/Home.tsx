@@ -85,7 +85,7 @@ const Home: React.FC = () => {
               </h2>
               
               <p className="text-red-100 text-lg mb-6">
-                Fresh meals, groceries & more. Available 24/7 at budget-friendly prices.
+                Fresh meals, snacks & more. Available 24/7 at budget-friendly prices.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-6">

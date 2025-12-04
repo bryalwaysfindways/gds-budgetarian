@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import ReviewModal from '../components/ReviewModal';
 import toast from 'react-hot-toast';
 import { db } from '../lib/firebase';
-import { collection, getDocs, QueryDocumentSnapshot, DocumentData, addDoc, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, QueryDocumentSnapshot, DocumentData, addDoc, query, where, doc, updateDoc, deleteDoc,orderBy } from 'firebase/firestore';
 import { useAuthStore } from '../store/useAuthStore';
 import { Clock, Package, Truck, CheckCircle, AlertCircle, History as HistoryIcon, Eye, X, Trash2 } from 'lucide-react';
 
@@ -26,7 +26,7 @@ interface Order {
   paymentMethod: string;
   gcashNumber?: string;
   subtotal: number;
-  shipping: number;
+  shipping: number; // (you can delete this line entirely if you prefer)
   total: number;
   isDelivered: boolean;
   isReceived?: boolean; // Track if order has been received
@@ -79,30 +79,50 @@ const Orders: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!user?.id) return;
-    const fetchOrders = async () => {
-      setLoading(true);
-      try {
-        const ordersQuery = query(collection(db, 'orders'), where('userId', '==', user.id));
-        const querySnapshot = await getDocs(ordersQuery);
-        const fetched: Order[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Order[];
-        setOrders(fetched);
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch orders.');
-      }
-      setLoading(false);
-    };
+  if (!user?.id) return;
 
-    fetchOrders();
-  }, [user]);
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const ordersQuery = query(
+        collection(db, 'orders'),
+        where('userId', '==', user.id)
+      );
 
-  function formatPeso(amount: number) {
-    return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
-  }
+      const querySnapshot = await getDocs(ordersQuery);
+
+      const fetched: Order[] = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Order[];
+
+      // 👉 Sort newest first (client-side)
+      fetched.sort((a, b) => {
+        const tA = a.createdAt?.seconds ?? 0;
+        const tB = b.createdAt?.seconds ?? 0;
+        return tB - tA;
+      });
+
+      setOrders(fetched);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch orders.");
+    }
+    setLoading(false);
+  };
+
+  fetchOrders();
+}, [user]);
+
+  function formatPeso(amount?: number | null) {
+  const safeAmount =
+    typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+
+  return `₱${safeAmount.toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+  })}`;
+}
   function formatDate(ts?: { seconds: number; nanoseconds: number }) {
     if (!ts) return '';
     const date = new Date(ts.seconds * 1000);
@@ -250,7 +270,7 @@ const Orders: React.FC = () => {
                 <th className="py-1.5 px-2 font-semibold">Address</th>
                 <th className="py-1.5 px-2 font-semibold">Payment</th>
                 <th className="py-1.5 px-2 font-semibold">Subtotal</th>
-                <th className="py-1.5 px-2 font-semibold">Shipping</th>
+                
                 <th className="py-1.5 px-2 font-semibold">Total</th>
                 <th className="py-1.5 px-2 font-semibold">Status</th>
                 <th className="py-1.5 px-2 font-semibold rounded-tr-lg">Date</th>
@@ -272,7 +292,7 @@ const Orders: React.FC = () => {
                     )}
                   </td>
                   <td className="py-1 px-2 border-b">{formatPeso(order.subtotal)}</td>
-                  <td className="py-1 px-2 border-b">{formatPeso(order.shipping)}</td>
+                 
                   <td className="py-1 px-2 border-b font-bold">{formatPeso(order.total)}</td>
                   <td className="py-1 px-2 border-b">
                     <div className="flex flex-col items-start gap-1">
@@ -303,7 +323,7 @@ const Orders: React.FC = () => {
                             setOrderToCancel(order);
                             setCancelConfirmOpen(true);
                           }}
-                          title="Cancel and delete this order"
+                          title="Cancel this order"
                         >
                           <Trash2 className="w-3 h-3" />
                           Cancel
@@ -353,7 +373,7 @@ const Orders: React.FC = () => {
                   {/* Status History Row */}
                   {expandedOrderId === order.id && order.statusHistory && order.statusHistory.length > 0 && (
                     <tr>
-                      <td colSpan={11} className="p-0 bg-indigo-50">
+                      <td colSpan={10} className="p-0 bg-indigo-50">
                       <div className="p-4">
                         <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                           <HistoryIcon className="w-4 h-4 text-indigo-600" />
@@ -504,10 +524,7 @@ const Orders: React.FC = () => {
                     <span className="text-gray-600">Subtotal:</span>
                     <span className="font-medium">{formatPeso(selectedOrderForDetails.subtotal)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping:</span>
-                    <span className="font-medium">{formatPeso(selectedOrderForDetails.shipping)}</span>
-                  </div>
+                  
                   <div className="flex justify-between pt-2 border-t font-bold text-base">
                     <span className="text-gray-800">Total:</span>
                     <span className="text-red-600">{formatPeso(selectedOrderForDetails.total)}</span>
