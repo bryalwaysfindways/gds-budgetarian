@@ -202,7 +202,7 @@ const Products: React.FC = () => {
                   </div>
                   <p className="text-gray-600 mb-4">
                     {typeof product.price === 'number' && !isNaN(product.price)
-                      ? `$${product.price.toFixed(2)}`
+                      ? `₱${product.price.toFixed(2)}`
                       : 'No price'}
                   </p>
                   <p className="text-gray-500 text-sm mb-4">{product.description}</p>
