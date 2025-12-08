@@ -42,7 +42,7 @@ const Products: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const { user } = useAuthStore();
 
-  const categories = ['All', 'Fresh Produce', 'Dairy & Eggs', 'Meat & Seafood', 'Bakery', 'Pantry Staples', 'Frozen Foods', 'Beverages', 'Snacks', 'Household', 'Personal Care', 'Food'];
+  const categories = ['All', 'Fresh', 'Dairy', 'Meat & Seafood', 'Bakery', 'Pantry Staples', 'Frozen Foods', 'Beverages', 'Snacks', 'Soup', 'Souvenir', 'Food'];
 
   // Caching logic
   useEffect(() => {

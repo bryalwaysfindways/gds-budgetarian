@@ -1,4 +1,4 @@
-// Checkout page with full validation and error display for all fields. Payment is Cash on Delivery or GCash only.
+// Checkout page with full validation and error display for all fields. 
 // ✅ CHANGED: Payment is now Cash on Delivery (COD) ONLY.
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
