@@ -8,17 +8,17 @@ import toast from 'react-hot-toast';
 import { uploadImage, deleteImage, validateImageFile } from '../../lib/imageUpload';
 
 const groceryCategories = [
-  { name: 'Fresh Produce', icon: '🥬' },
-  { name: 'Dairy & Eggs', icon: '🥛' },
+  { name: 'Fresh', icon: '🌿' },
+  { name: 'Dairy', icon: '🥛' },
   { name: 'Meat & Seafood', icon: '🥩' },
   { name: 'Bakery', icon: '🍞' },
   { name: 'Pantry Staples', icon: '🥫' },
   { name: 'Frozen Foods', icon: '❄️' },
   { name: 'Beverages', icon: '🧃' },
   { name: 'Snacks', icon: '🍪' },
-  { name: 'Household', icon: '🧹' },
-  {name:'personal care', icon:'🧴'},
-  {name:'food', icon:'🍽️'},
+  { name: 'Soup', icon: '🥘' },
+  {name:'Souvenir', icon:'🎀'},
+  {name:'Food', icon:'🍽️'},
 ];
 
 export default function ProductForm() {
