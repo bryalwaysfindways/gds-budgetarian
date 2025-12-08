@@ -6,17 +6,17 @@ import { Product } from '../types';
 import toast from 'react-hot-toast';
 
 const groceryCategories = [
-  { name: 'Fresh Produce', icon: '🥬' },
-  { name: 'Dairy & Eggs', icon: '🥛' },
+  { name: 'Fresh', icon: '🌿' },
+  { name: 'Dairy', icon: '🥛' },
   { name: 'Meat & Seafood', icon: '🥩' },
   { name: 'Bakery', icon: '🍞' },
   { name: 'Pantry Staples', icon: '🥫' },
   { name: 'Frozen Foods', icon: '❄️' },
   { name: 'Beverages', icon: '🧃' },
   { name: 'Snacks', icon: '🍪' },
-  { name: 'Household', icon: '🧹' },
-  {name:'personal care', icon:'🧴'},
-  {name:'food', icon:'🍽️'},
+  { name: 'Soup', icon: '🥘' },
+  {name:'Souvenir', icon:'🎀'},
+  {name:'Food', icon:'🍽️'},
 ];
 
 const Home: React.FC = () => {
@@ -103,7 +103,7 @@ const Home: React.FC = () => {
               
               {/* Service Tags */}
               <div className="flex flex-wrap gap-2">
-                {['🚚 Free Delivery', '⏰ 24/7 Open', '🍚 Unlimited Rice', '🔥 Hot & Fresh'].map((tag) => (
+                {['🚚 Free Delivery', '⏰ Open for 24/7', '🍚 Unlimited Rice', '🔥 Hot & Fresh'].map((tag) => (
                   <span key={tag} className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
                     {tag}
                   </span>
@@ -126,7 +126,7 @@ const Home: React.FC = () => {
                   <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mb-3">
                     <span className="text-white text-xl">🚚</span>
                   </div>
-                  <h3 className="font-bold text-red-800 mb-1">Delivery</h3>
+                  <h3 className="font-bold text-red-800 mb-1">Online Delivery</h3>
                   <p className="text-gray-600 text-sm">Fast & reliable</p>
                 </div>
                 
@@ -142,7 +142,7 @@ const Home: React.FC = () => {
                   <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mb-3">
                     <span className="text-white text-xl">🛒</span>
                   </div>
-                  <h3 className="font-bold text-red-800 mb-1">Groceries</h3>
+                  <h3 className="font-bold text-red-800 mb-1">Packages</h3>
                   <p className="text-gray-600 text-sm">Fresh daily</p>
                 </div>
               </div>
@@ -188,7 +188,7 @@ const Home: React.FC = () => {
       <section className="bg-white py-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-gray-800">Popular near you</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Popular</h2>
             <Link to="/products" className="text-red-600 font-medium hover:text-red-700 transition-colors">
               See all
             </Link>

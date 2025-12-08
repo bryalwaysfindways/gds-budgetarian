@@ -22,8 +22,8 @@ const Footer: React.FC = () => {
             <h3 className="text-xl font-semibold mb-4">Contact</h3>
             <ul className="space-y-2 text-gray-300 text-sm md:text-base">
               <li>Email: info@gdsbudgetarian.com</li>
-              <li>Phone: (555) 123-4567</li>
-              <li>Address: 123 GDS Budgetarian</li>
+              <li>Phone: 09075626970 / 09565280198</li>
+              <li>Laurel, Aguada Ozamis City</li>
             </ul>
           </div>
         </div>
