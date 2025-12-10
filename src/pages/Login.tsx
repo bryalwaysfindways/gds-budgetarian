@@ -116,7 +116,7 @@ const Login: React.FC = () => {
           left: 0
         }}
       >
-        <source src="/images/vid.mp4" type="video/mp4" />
+        <source src="/images/Gdslogoads.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       

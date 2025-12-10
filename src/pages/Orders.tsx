@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import ReviewModal from '../components/ReviewModal';
 import toast from 'react-hot-toast';
 import { db } from '../lib/firebase';
-import { collection, getDocs, QueryDocumentSnapshot, DocumentData, addDoc, query, where, doc, updateDoc, deleteDoc,orderBy } from 'firebase/firestore';
+import { collection, getDocs, QueryDocumentSnapshot, DocumentData, addDoc, query, where, doc, updateDoc,orderBy } from 'firebase/firestore';
 import { useAuthStore } from '../store/useAuthStore';
 import { Clock, Package, Truck, CheckCircle, AlertCircle, History as HistoryIcon, Eye, X, Trash2 } from 'lucide-react';
 
@@ -133,13 +133,23 @@ const Orders: React.FC = () => {
     if (!orderToCancel) return;
 
     setCancelling(true);
-    try {
-      await deleteDoc(doc(db, 'orders', orderToCancel.id));
-      setOrders(prevOrders => prevOrders.filter(o => o.id !== orderToCancel.id));
-      toast.success('Order cancelled successfully');
-      setCancelConfirmOpen(false);
-      setOrderToCancel(null);
-    } catch (err) {
+     try {
+    // Instead of deleting the order, just mark it as cancelled
+    await updateDoc(doc(db, 'orders', orderToCancel.id), {
+      status: 'cancelled',
+    });
+
+    // Update local state so UI shows "Cancelled" without removing the row
+    setOrders(prevOrders =>
+      prevOrders.map(o =>
+        o.id === orderToCancel.id ? { ...o, status: 'cancelled' } : o
+      )
+    );
+
+    toast.success('Order cancelled successfully');
+    setCancelConfirmOpen(false);
+    setOrderToCancel(null);
+  } catch (err) {
       console.error('Error cancelling order:', err);
       toast.error('Failed to cancel order. Please try again.');
     } finally {
