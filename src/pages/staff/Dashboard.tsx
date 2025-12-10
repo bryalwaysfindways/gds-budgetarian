@@ -41,6 +41,10 @@ export default function StaffDashboard() {
   const [selectedOrderForModal, setSelectedOrderForModal] =
     useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 🔵 NEW: track which orders are selected for bulk actions (checkboxes)
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+
   const { user } = useAuthStore();
   const location = useLocation();
 
@@ -54,6 +58,66 @@ export default function StaffDashboard() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // 🔵 NEW: helper to toggle a single order's selection (checkbox)
+  const toggleSelectOrder = (orderId: string) => {
+    setSelectedOrders((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId) // if already selected → unselect
+        : [...prev, orderId] // otherwise add to selected list
+    );
+  };
+
+  // 🔵 NEW: helper to toggle "Select All" for current filtered orders
+  const toggleSelectAll = () => {
+    // If all visible orders are already selected → unselect all visible
+    const allVisibleSelected =
+      filteredOrders.length > 0 &&
+      filteredOrders.every((order) => selectedOrders.includes(order.id));
+
+    if (allVisibleSelected) {
+      // Remove only IDs that belong to the currently visible orders
+      setSelectedOrders((prev) =>
+        prev.filter((id) => !filteredOrders.some((o) => o.id === id))
+      );
+    } else {
+      // Add all visible order IDs to the selected list (without duplicates)
+      setSelectedOrders((prev) => {
+        const visibleIds = filteredOrders.map((o) => o.id);
+        const merged = new Set([...prev, ...visibleIds]);
+        return Array.from(merged);
+      });
+    }
+  };
+
+  // 🔵 NEW: bulk delete for all selected order IDs
+  const deleteSelectedOrders = async () => {
+    if (selectedOrders.length === 0) return; // nothing selected, do nothing
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectedOrders.length} selected order(s)?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // Delete each selected order document from Firestore
+      for (const id of selectedOrders) {
+        await deleteDoc(doc(db, "orders", id));
+      }
+
+      // Remove deleted orders from local state
+      setOrders((prev) => prev.filter((o) => !selectedOrders.includes(o.id)));
+
+      // Clear the selection state
+      setSelectedOrders([]);
+
+      toast.success("Selected orders deleted successfully");
+    } catch (error) {
+      console.error("Error deleting selected orders:", error);
+      toast.error("Failed to delete selected orders");
+    }
+  };
 
   // Auto-expand order if coming from notification
   useEffect(() => {
@@ -257,8 +321,11 @@ export default function StaffDashboard() {
       // Delete from Firestore
       await deleteDoc(doc(db, "orders", orderId));
 
-      // Update local state
+      // Update local state: remove the single order
       setOrders(orders.filter((o) => o.id !== orderId));
+
+      // 🔵 NEW: also remove this order from the "selected" list if it was checked
+      setSelectedOrders((prev) => prev.filter((id) => id !== orderId));
 
       // Close the expanded order if it was open
       setExpandedOrders((prev) => {
@@ -331,6 +398,11 @@ export default function StaffDashboard() {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
+  // Convenience: compute once whether all visible orders are selected (for "Select All" checkbox)
+  const allVisibleSelected =
+    filteredOrders.length > 0 &&
+    filteredOrders.every((order) => selectedOrders.includes(order.id));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-red-50">
       {/* Header with notifications and profile */}
@@ -382,7 +454,7 @@ export default function StaffDashboard() {
             </div>
           ) : (
             <>
-              {/* Mobile Card View */}
+              {/* Mobile Card View (no bulk delete UI here to keep it simple) */}
               <div className="md:hidden space-y-4 p-4">
                 {filteredOrders.map((order) => (
                   <div
@@ -443,440 +515,488 @@ export default function StaffDashboard() {
                 ))}
               </div>
 
-              {/* Desktop Expandable View */}
-              <div className="hidden md:block divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    id={`order-${order.id}`}
-                    className="bg-white transition-all duration-200"
+              {/* Desktop Expandable View with bulk selection */}
+              <div className="hidden md:block">
+                {/* 🔵 NEW: Bulk selection toolbar for desktop */}
+                <div className="flex items-center justify-between px-6 py-3 border-b bg-yellow-50">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 cursor-pointer accent-red-600"
+                      checked={allVisibleSelected}
+                      onChange={toggleSelectAll}
+                    />
+                    <span className="text-sm text-gray-700">
+                      Select all visible orders
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={deleteSelectedOrders}
+                    disabled={selectedOrders.length === 0}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 ${
+                      selectedOrders.length === 0
+                        ? "bg-red-200 text-white cursor-not-allowed"
+                        : "bg-red-600 text-white hover:bg-red-700"
+                    }`}
                   >
-                    {/* Order header - always visible */}
+                    <Trash2 className="w-4 h-4" />
+                    Delete Selected ({selectedOrders.length})
+                  </button>
+                </div>
+
+                <div className="divide-y divide-gray-200">
+                  {filteredOrders.map((order) => (
                     <div
-                      className="p-4 md:px-6 flex flex-wrap md:flex-nowrap items-center justify-between gap-4 cursor-pointer hover:bg-yellow-50 transition-colors"
-                      onClick={() => toggleOrderDetails(order.id)}
+                      key={order.id}
+                      id={`order-${order.id}`}
+                      className="bg-white transition-all duration-200"
                     >
-                      <div className="flex items-center gap-3 w-full md:w-auto">
-                        {expandedOrders[order.id] ? (
-                          <ChevronUp className="w-5 h-5 text-red-500" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-red-500" />
-                        )}
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {order.shippingAddress?.name ||
-                              `${(order as any).firstName || ""} ${
-                                (order as any).lastName || ""
-                              }`.trim() ||
-                              "Customer"}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Order #{order.id.substring(0, 8)}... •{" "}
-                            {order.createdAt.toLocaleDateString()}
-                          </p>
+                      {/* Order header - always visible */}
+                      <div
+                        className="p-4 md:px-6 flex flex-wrap md:flex-nowrap items-center justify-between gap-4 cursor-pointer hover:bg-yellow-50 transition-colors"
+                        onClick={() => toggleOrderDetails(order.id)}
+                      >
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                          {/* 🔵 NEW: per-row checkbox for bulk selection */}
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 cursor-pointer accent-red-600"
+                            checked={selectedOrders.includes(order.id)}
+                            onChange={(e) => {
+                              e.stopPropagation(); // don't toggle expand
+                              toggleSelectOrder(order.id);
+                            }}
+                          />
+
+                          {expandedOrders[order.id] ? (
+                            <ChevronUp className="w-5 h-5 text-red-500" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-red-500" />
+                          )}
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {order.shippingAddress?.name ||
+                                `${(order as any).firstName || ""} ${
+                                  (order as any).lastName || ""
+                                }`.trim() ||
+                                "Customer"}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Order #{order.id.substring(0, 8)}... •{" "}
+                              {order.createdAt.toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                          <div className="text-right">
+                            <p className="font-medium text-gray-900">
+                              ₱
+                              {order.total.toLocaleString("en-PH", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {order.items.length} item(s)
+                            </p>
+                          </div>
+
+                          <span
+                            className={`px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                              order.status || "pending"
+                            )}`}
+                          >
+                            {getStatusIcon(order.status)}
+                            {getStatusLabel(order.status)}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900">
-                            ₱
-                            {order.total.toLocaleString("en-PH", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {order.items.length} item(s)
-                          </p>
-                        </div>
-
-                        <span
-                          className={`px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                            order.status || "pending"
-                          )}`}
-                        >
-                          {getStatusIcon(order.status)}
-                          {getStatusLabel(order.status)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Order details - expandable */}
-                    {expandedOrders[order.id] && (
-                      <div className="p-4 md:px-6 pt-0 bg-yellow-50 border-t border-yellow-100">
-                        {/* Order ID and Date */}
-                        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <p className="text-gray-600">
-                                <span className="font-semibold">Order ID:</span>
-                                <span className="ml-2 font-mono text-xs bg-white px-2 py-1 rounded">
-                                  {order.id}
-                                </span>
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600">
-                                <span className="font-semibold">
-                                  Order Date:
-                                </span>
-                                <span className="ml-2">
-                                  {order.createdAt.toLocaleString()}
-                                </span>
-                              </p>
+                      {/* Order details - expandable */}
+                      {expandedOrders[order.id] && (
+                        <div className="p-4 md:px-6 pt-0 bg-yellow-50 border-t border-yellow-100">
+                          {/* Order ID and Date */}
+                          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <p className="text-gray-600">
+                                  <span className="font-semibold">
+                                    Order ID:
+                                  </span>
+                                  <span className="ml-2 font-mono text-xs bg-white px-2 py-1 rounded">
+                                    {order.id}
+                                  </span>
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">
+                                  <span className="font-semibold">
+                                    Order Date:
+                                  </span>
+                                  <span className="ml-2">
+                                    {order.createdAt.toLocaleString()}
+                                  </span>
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Customer info */}
-                        <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
-                          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <Users className="w-5 h-5 text-blue-600" />
-                            Customer Information
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                            <div className="space-y-2">
-                              <p>
-                                <span className="text-gray-500 font-medium">
-                                  Name:
-                                </span>
-                                <span className="ml-2">
-                                  {order.shippingAddress?.name ||
-                                    `${(order as any).firstName || ""} ${
-                                      (order as any).lastName || ""
-                                    }`.trim() ||
-                                    "N/A"}
-                                </span>
-                              </p>
-                              <p>
-                                <span className="text-gray-500 font-medium">
-                                  Email:
-                                </span>
-                                <span className="ml-2">
-                                  {(order as any).email || "N/A"}
-                                </span>
-                              </p>
-                              <p>
-                                <span className="text-gray-500 font-medium">
-                                  Phone:
-                                </span>
-                                <span className="ml-2">
-                                  {order.shippingAddress?.phone ||
-                                    (order as any).phone ||
-                                    "N/A"}
-                                </span>
-                              </p>
-                            </div>
-                            <div className="space-y-2">
-                              <p>
-                                <span className="text-gray-500 font-medium">
-                                  Address:
-                                </span>
-                                <span className="ml-2">
-                                  {order.shippingAddress?.street ||
-                                    (order as any).address ||
-                                    "N/A"}
-                                </span>
-                              </p>
-                              <p>
-                                <span className="text-gray-500 font-medium">
-                                  City:
-                                </span>
-                                <span className="ml-2">
-                                  {order.shippingAddress?.city ||
-                                    (order as any).city ||
-                                    "N/A"}
-                                </span>
-                              </p>
-                              <p>
-                                <span className="text-gray-500 font-medium">
-                                  Postal Code:
-                                </span>
-                                <span className="ml-2">
-                                  {order.shippingAddress?.postalCode ||
-                                    (order as any).zipCode ||
-                                    "N/A"}
-                                </span>
-                              </p>
+                          {/* Customer info */}
+                          <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+                            <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                              <Users className="w-5 h-5 text-blue-600" />
+                              Customer Information
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                              <div className="space-y-2">
+                                <p>
+                                  <span className="text-gray-500 font-medium">
+                                    Name:
+                                  </span>
+                                  <span className="ml-2">
+                                    {order.shippingAddress?.name ||
+                                      `${(order as any).firstName || ""} ${
+                                        (order as any).lastName || ""
+                                      }`.trim() ||
+                                      "N/A"}
+                                  </span>
+                                </p>
+                                <p>
+                                  <span className="text-gray-500 font-medium">
+                                    Email:
+                                  </span>
+                                  <span className="ml-2">
+                                    {(order as any).email || "N/A"}
+                                  </span>
+                                </p>
+                                <p>
+                                  <span className="text-gray-500 font-medium">
+                                    Phone:
+                                  </span>
+                                  <span className="ml-2">
+                                    {order.shippingAddress?.phone ||
+                                      (order as any).phone ||
+                                      "N/A"}
+                                  </span>
+                                </p>
+                              </div>
+                              <div className="space-y-2">
+                                <p>
+                                  <span className="text-gray-500 font-medium">
+                                    Address:
+                                  </span>
+                                  <span className="ml-2">
+                                    {order.shippingAddress?.street ||
+                                      (order as any).address ||
+                                      "N/A"}
+                                  </span>
+                                </p>
+                                <p>
+                                  <span className="text-gray-500 font-medium">
+                                    City:
+                                  </span>
+                                  <span className="ml-2">
+                                    {order.shippingAddress?.city ||
+                                      (order as any).city ||
+                                      "N/A"}
+                                  </span>
+                                </p>
+                                <p>
+                                  <span className="text-gray-500 font-medium">
+                                    Postal Code:
+                                  </span>
+                                  <span className="ml-2">
+                                    {order.shippingAddress?.postalCode ||
+                                      (order as any).zipCode ||
+                                      "N/A"}
+                                  </span>
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Payment Information */}
-                        <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
-                          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <ShoppingBag className="w-5 h-5 text-green-600" />
-                            Payment Information
-                          </h3>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500 font-medium">
-                                Payment Method:
-                              </span>
-                              <span
-                                className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                  (order as any).paymentMethod === "cod"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-blue-100 text-blue-800"
-                                }`}
-                              >
-                                {(order as any).paymentMethod === "cod"
-                                  ? "💵 Cash on Delivery"
-                                  : "📱 GCash"}
-                              </span>
-                            </div>
-
-                            {/* Valid ID for COD */}
-                            {(order as any).paymentMethod === "cod" &&
-                              (order as any).validIdUrl && (
-                                <div className="border-t pt-3 mt-3">
-                                  <p className="text-gray-500 font-medium mb-2">
-                                    Valid ID (Uploaded):
-                                  </p>
-                                  <div className="bg-gray-50 p-3 rounded-lg">
-                                    <img
-                                      src={(order as any).validIdUrl}
-                                      alt="Customer Valid ID"
-                                      className="max-w-md w-full rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors"
-                                      onClick={() =>
-                                        window.open(
-                                          (order as any).validIdUrl,
-                                          "_blank"
-                                        )
-                                      }
-                                      style={{
-                                        maxHeight: "300px",
-                                        objectFit: "contain",
-                                      }}
-                                    />
-                                    <p className="text-xs text-gray-500 mt-2">
-                                      💡 Click image to view full size in new
-                                      tab
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
-
-                            {/* GCash Number */}
-                            {(order as any).paymentMethod === "gcash" &&
-                              (order as any).gcashNumber && (
-                                <div className="border-t pt-3 mt-3">
-                                  <p className="text-gray-500 font-medium">
-                                    GCash Number:
-                                  </p>
-                                  <p className="text-lg font-semibold text-blue-600 mt-1">
-                                    {(order as any).gcashNumber}
-                                  </p>
-                                </div>
-                              )}
-                          </div>
-                        </div>
-
-                        {/* Order items */}
-                        <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
-                          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <Package className="w-5 h-5 text-purple-600" />
-                            Order Items
-                          </h3>
-                          <div className="divide-y divide-gray-100">
-                            {order.items.map((item, index) => {
-                              const product = productCache[item.productId];
-                              return (
-                                <div
-                                  key={index}
-                                  className="py-3 flex justify-between items-center"
+                          {/* Payment Information */}
+                          <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+                            <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                              <ShoppingBag className="w-5 h-5 text-green-600" />
+                              Payment Information
+                            </h3>
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-500 font-medium">
+                                  Payment Method:
+                                </span>
+                                <span
+                                  className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                                    (order as any).paymentMethod === "cod"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-blue-100 text-blue-800"
+                                  }`}
                                 >
-                                  <div>
-                                    <p className="font-medium text-gray-800">
-                                      {product?.name || "Loading..."}
+                                  {(order as any).paymentMethod === "cod"
+                                    ? "💵 Cash on Delivery"
+                                    : "📱 GCash"}
+                                </span>
+                              </div>
+
+                              {/* Valid ID for COD */}
+                              {(order as any).paymentMethod === "cod" &&
+                                (order as any).validIdUrl && (
+                                  <div className="border-t pt-3 mt-3">
+                                    <p className="text-gray-500 font-medium mb-2">
+                                      Valid ID (Uploaded):
                                     </p>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                      Quantity:{" "}
-                                      <span className="font-semibold text-gray-700">
-                                        {item.quantity}
-                                      </span>{" "}
-                                      ×
-                                      <span className="ml-1">
-                                        ₱
-                                        {item.price.toLocaleString("en-PH", {
-                                          minimumFractionDigits: 2,
-                                        })}
-                                      </span>
+                                    <div className="bg-gray-50 p-3 rounded-lg">
+                                      <img
+                                        src={(order as any).validIdUrl}
+                                        alt="Customer Valid ID"
+                                        className="max-w-md w-full rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors"
+                                        onClick={() =>
+                                          window.open(
+                                            (order as any).validIdUrl,
+                                            "_blank"
+                                          )
+                                        }
+                                        style={{
+                                          maxHeight: "300px",
+                                          objectFit: "contain",
+                                        }}
+                                      />
+                                      <p className="text-xs text-gray-500 mt-2">
+                                        💡 Click image to view full size in new
+                                        tab
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                              {/* GCash Number */}
+                              {(order as any).paymentMethod === "gcash" &&
+                                (order as any).gcashNumber && (
+                                  <div className="border-t pt-3 mt-3">
+                                    <p className="text-gray-500 font-medium">
+                                      GCash Number:
                                     </p>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                      ID: {item.productId.substring(0, 8)}...
+                                    <p className="text-lg font-semibold text-blue-600 mt-1">
+                                      {(order as any).gcashNumber}
                                     </p>
                                   </div>
-                                  <p className="font-semibold text-lg">
-                                    ₱
-                                    {(
-                                      item.price * item.quantity
-                                    ).toLocaleString("en-PH", {
-                                      minimumFractionDigits: 2,
-                                    })}
-                                  </p>
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          {/* Order Summary with breakdown */}
-                          <div className="mt-4 pt-4 border-t-2 border-gray-200 space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <p className="text-gray-600">Subtotal:</p>
-                              <p className="font-medium">
-                                ₱
-                                {(
-                                  order.subtotal || order.total - 99
-                                ).toLocaleString("en-PH", {
-                                  minimumFractionDigits: 2,
-                                })}
-                              </p>
-                            </div>
-
-                            <div className="flex justify-between pt-2 border-t border-gray-200">
-                              <p className="font-bold text-lg">Total:</p>
-                              <p className="font-bold text-xl text-red-600">
-                                ₱
-                                {order.total.toLocaleString("en-PH", {
-                                  minimumFractionDigits: 2,
-                                })}
-                              </p>
+                                )}
                             </div>
                           </div>
-                        </div>
 
-                        {/* Status History */}
-                        {order.statusHistory &&
-                          order.statusHistory.length > 0 && (
-                            <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
-                              <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                <History className="w-5 h-5 text-indigo-600" />
-                                Status History
-                              </h3>
-                              <div className="space-y-3">
-                                {order.statusHistory
-                                  .slice()
-                                  .sort((a, b) => {
-                                    const timeA =
-                                      a.timestamp instanceof Date
-                                        ? a.timestamp.getTime()
-                                        : new Date(a.timestamp).getTime();
-                                    const timeB =
-                                      b.timestamp instanceof Date
-                                        ? b.timestamp.getTime()
-                                        : new Date(b.timestamp).getTime();
-                                    return timeB - timeA; // newest first
-                                  })
-                                  .map((history, index) => (
-                                    <div
-                                      key={index}
-                                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border-l-4 border-indigo-400"
-                                    >
-                                      <div className="flex-shrink-0 mt-1">
-                                        {getStatusIcon(history.status)}
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="flex items-center justify-between">
-                                          <span
-                                            className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                                              history.status
-                                            )}`}
-                                          >
-                                            {getStatusLabel(history.status)}
-                                          </span>
-                                          {index === 0 && (
-                                            <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full font-medium">
-                                              Current
-                                            </span>
-                                          )}
+                          {/* Order items */}
+                          <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+                            <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                              <Package className="w-5 h-5 text-purple-600" />
+                              Order Items
+                            </h3>
+                            <div className="divide-y divide-gray-100">
+                              {order.items.map((item, index) => {
+                                const product = productCache[item.productId];
+                                return (
+                                  <div
+                                    key={index}
+                                    className="py-3 flex justify-between items-center"
+                                  >
+                                    <div>
+                                      <p className="font-medium text-gray-800">
+                                        {product?.name || "Loading..."}
+                                      </p>
+                                      <p className="text-sm text-gray-500 mt-1">
+                                        Quantity:{" "}
+                                        <span className="font-semibold text-gray-700">
+                                          {item.quantity}
+                                        </span>{" "}
+                                        ×
+                                        <span className="ml-1">
+                                          ₱
+                                          {item.price.toLocaleString("en-PH", {
+                                            minimumFractionDigits: 2,
+                                          })}
+                                        </span>
+                                      </p>
+                                      <p className="text-xs text-gray-400 mt-1">
+                                        ID: {item.productId.substring(0, 8)}...
+                                      </p>
+                                    </div>
+                                    <p className="font-semibold text-lg">
+                                      ₱
+                                      {(
+                                        item.price * item.quantity
+                                      ).toLocaleString("en-PH", {
+                                        minimumFractionDigits: 2,
+                                      })}
+                                    </p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Order Summary with breakdown */}
+                            <div className="mt-4 pt-4 border-t-2 border-gray-200 space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <p className="text-gray-600">Subtotal:</p>
+                                <p className="font-medium">
+                                  ₱
+                                  {(
+                                    order.subtotal || order.total - 99
+                                  ).toLocaleString("en-PH", {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                </p>
+                              </div>
+
+                              <div className="flex justify-between pt-2 border-t border-gray-200">
+                                <p className="font-bold text-lg">Total:</p>
+                                <p className="font-bold text-xl text-red-600">
+                                  ₱
+                                  {order.total.toLocaleString("en-PH", {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status History */}
+                          {order.statusHistory &&
+                            order.statusHistory.length > 0 && (
+                              <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+                                <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                  <History className="w-5 h-5 text-indigo-600" />
+                                  Status History
+                                </h3>
+                                <div className="space-y-3">
+                                  {order.statusHistory
+                                    .slice()
+                                    .sort((a, b) => {
+                                      const timeA =
+                                        a.timestamp instanceof Date
+                                          ? a.timestamp.getTime()
+                                          : new Date(a.timestamp).getTime();
+                                      const timeB =
+                                        b.timestamp instanceof Date
+                                          ? b.timestamp.getTime()
+                                          : new Date(b.timestamp).getTime();
+                                      return timeB - timeA; // newest first
+                                    })
+                                    .map((history, index) => (
+                                      <div
+                                        key={index}
+                                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border-l-4 border-indigo-400"
+                                      >
+                                        <div className="flex-shrink-0 mt-1">
+                                          {getStatusIcon(history.status)}
                                         </div>
-                                        <p className="text-sm text-gray-600 mt-2">
-                                          {history.timestamp instanceof Date
-                                            ? history.timestamp.toLocaleString(
-                                                "en-PH",
-                                                {
+                                        <div className="flex-1">
+                                          <div className="flex items-center justify-between">
+                                            <span
+                                              className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                                                history.status
+                                              )}`}
+                                            >
+                                              {getStatusLabel(history.status)}
+                                            </span>
+                                            {index === 0 && (
+                                              <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full font-medium">
+                                                Current
+                                              </span>
+                                            )}
+                                          </div>
+                                          <p className="text-sm text-gray-600 mt-2">
+                                            {history.timestamp instanceof Date
+                                              ? history.timestamp.toLocaleString(
+                                                  "en-PH",
+                                                  {
+                                                    year: "numeric",
+                                                    month: "short",
+                                                    day: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                  }
+                                                )
+                                              : new Date(
+                                                  history.timestamp
+                                                ).toLocaleString("en-PH", {
                                                   year: "numeric",
                                                   month: "short",
                                                   day: "numeric",
                                                   hour: "2-digit",
                                                   minute: "2-digit",
-                                                }
-                                              )
-                                            : new Date(
-                                                history.timestamp
-                                              ).toLocaleString("en-PH", {
-                                                year: "numeric",
-                                                month: "short",
-                                                day: "numeric",
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                              })}
-                                        </p>
-                                        {history.updatedBy && (
-                                          <p className="text-xs text-gray-500 mt-1">
-                                            Updated by:{" "}
-                                            <span className="font-medium">
-                                              {history.updatedBy}
-                                            </span>
+                                                })}
                                           </p>
-                                        )}
+                                          {history.updatedBy && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                              Updated by:{" "}
+                                              <span className="font-medium">
+                                                {history.updatedBy}
+                                              </span>
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                          )}
-
-                        {/* Order actions */}
-                        <div className="p-4 bg-white rounded-lg shadow-sm flex flex-col gap-3">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-gray-800">
-                              Update Status
-                            </h3>
-                            {/*NEW: if order is cancelled, do not show controls */}
-                            {order.status === "cancelled" ? (
-                              <p className="text-sm text-gray-500 italic">
-                                This order has been cancelled.
-                              </p>
-                            ) : (
-                              // Status is saved immediately via dropdown onChange.
-                              //    We removed the extra "Update" button to avoid double actions.
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={order.status || "pending"}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    updateOrderStatus(order.id, e.target.value);
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="p-2 border border-yellow-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                >
-                                  <option value="pending">Pending</option>
-                                  <option value="processing">Preparing</option>
-                                  <option value="shipped">Shipped</option>
-                                  <option value="delivered">Delivered</option>
-                                  <option value="cancelled">Cancelled</option>
-                                </select>
-
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteOrder(order.id);
-                                  }}
-                                  className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete
-                                </button>
+                                    ))}
+                                </div>
                               </div>
                             )}
+
+                          {/* Order actions */}
+                          <div className="p-4 bg-white rounded-lg shadow-sm flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-semibold text-gray-800">
+                                Update Status
+                              </h3>
+                              {/* if order is cancelled, do not show controls */}
+                              {order.status === "cancelled" ? (
+                                <p className="text-sm text-gray-500 italic">
+                                  This order has been cancelled.
+                                </p>
+                              ) : (
+                                // Status is saved immediately via dropdown onChange.
+                                // We removed the extra "Update" button to avoid double actions.
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={order.status || "pending"}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      updateOrderStatus(
+                                        order.id,
+                                        e.target.value
+                                      );
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-2 border border-yellow-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                  >
+                                    <option value="pending">Pending</option>
+                                    <option value="processing">
+                                      Preparing
+                                    </option>
+                                    <option value="shipped">Shipped</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                  </select>
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteOrder(order.id);
+                                    }}
+                                    className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
