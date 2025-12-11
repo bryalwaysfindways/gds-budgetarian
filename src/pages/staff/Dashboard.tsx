@@ -61,10 +61,11 @@ export default function StaffDashboard() {
 
   // 🔵 NEW: helper to toggle a single order's selection (checkbox)
   const toggleSelectOrder = (orderId: string) => {
-    setSelectedOrders((prev) =>
-      prev.includes(orderId)
-        ? prev.filter((id) => id !== orderId) // if already selected → unselect
-        : [...prev, orderId] // otherwise add to selected list
+    setSelectedOrders(
+      (prev) =>
+        prev.includes(orderId)
+          ? prev.filter((id) => id !== orderId) // if already selected → unselect
+          : [...prev, orderId] // otherwise add to selected list
     );
   };
 
@@ -297,12 +298,16 @@ export default function StaffDashboard() {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return;
 
-    const customerName =
-      order.shippingAddress?.name ||
-      `${(order as any).firstName || ""} ${
-        (order as any).lastName || ""
-      }`.trim() ||
-      "Customer";
+    const customerName = (
+      <span className="ml-2">
+        {(order as any).customerName ||
+          order.shippingAddress?.name ||
+          `${(order as any).firstName || ""} ${
+            (order as any).lastName || ""
+          }`.trim() ||
+          "N/A"}
+      </span>
+    );
 
     // Show confirmation dialog
     const confirmed = window.confirm(
@@ -465,11 +470,14 @@ export default function StaffDashboard() {
                     {/* Customer Name and Order Info */}
                     <div className="mb-3">
                       <h3 className="font-semibold text-gray-900">
-                        {order.shippingAddress?.name ||
-                          `${(order as any).firstName || ""} ${
-                            (order as any).lastName || ""
-                          }`.trim() ||
-                          "Customer"}
+                        <span className="ml-2">
+                          {(order as any).customerName ||
+                            order.shippingAddress?.name ||
+                            `${(order as any).firstName || ""} ${
+                              (order as any).lastName || ""
+                            }`.trim() ||
+                            "N/A"}
+                        </span>
                       </h3>
                       <p className="text-xs text-gray-500">
                         Order #{order.id.substring(0, 8)}... •{" "}
@@ -576,11 +584,14 @@ export default function StaffDashboard() {
                           )}
                           <div>
                             <p className="font-medium text-gray-900">
-                              {order.shippingAddress?.name ||
-                                `${(order as any).firstName || ""} ${
-                                  (order as any).lastName || ""
-                                }`.trim() ||
-                                "Customer"}
+                              <span className="ml-2">
+                                {(order as any).customerName ||
+                                  order.shippingAddress?.name ||
+                                  `${(order as any).firstName || ""} ${
+                                    (order as any).lastName || ""
+                                  }`.trim() ||
+                                  "N/A"}
+                              </span>
                             </p>
                             <p className="text-sm text-gray-500">
                               Order #{order.id.substring(0, 8)}... •{" "}
@@ -655,7 +666,8 @@ export default function StaffDashboard() {
                                     Name:
                                   </span>
                                   <span className="ml-2">
-                                    {order.shippingAddress?.name ||
+                                    {(order as any).customerName ||
+                                      order.shippingAddress?.name ||
                                       `${(order as any).firstName || ""} ${
                                         (order as any).lastName || ""
                                       }`.trim() ||

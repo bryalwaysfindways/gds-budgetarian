@@ -10,11 +10,8 @@ import { useCartStore } from "../store/useCartStore";
 import { createNewOrderNotification } from "../lib/notifications";
 
 interface FormData {
+  //Removed contact information
   userId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
   address: string;
   city: string;
   zipCode: string;
@@ -46,10 +43,10 @@ const Checkout: React.FC = () => {
   };
   const [formData, setFormData] = useState<FormData>({
     userId: user?.id || "",
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
+   
+   
+   //Removed Contact Information
+ 
     address: "",
     city: "",
     zipCode: "",
@@ -133,29 +130,24 @@ const Checkout: React.FC = () => {
     }
   };
 
-  // Simple validators
+  /* Simple validators Removed
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validatePhone = (phone: string) => /^09\d{9}$/.test(phone);
-
+  */
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.firstName) newErrors.firstName = "First name is required";
-    if (!formData.lastName) newErrors.lastName = "Last name is required";
-    if (!formData.email) newErrors.email = "Email is required";
-    else if (!validateEmail(formData.email))
-      newErrors.email = "Invalid email address";
-    if (!formData.phone) newErrors.phone = "Phone number is required";
-    else if (!validatePhone(formData.phone))
-      newErrors.phone = "Invalid phone (must be 11 digits, start with 09)";
+
+    // Shipping address validation
     if (!formData.address) newErrors.address = "Address is required";
     if (!formData.city) newErrors.city = "City is required";
-
     if (!formData.zipCode) newErrors.zipCode = "ZIP Code is required";
 
+    // COD requires valid ID
     if (!formData.validIdUrl) {
       newErrors.validId = "Valid ID is required for Cash on Delivery";
     }
+
     return newErrors;
   };
 
@@ -181,9 +173,19 @@ const Checkout: React.FC = () => {
       }
       // Use the calculated cart summary values for consistency
       const { subtotal, total } = cartSummary;
+
       const orderData: any = {
+        
         ...formData,
         userId: user?.id || "",
+        
+        firstName: (user as any)?.firstName ?? "",
+        lastName: (user as any)?.lastName ?? "",
+        // If your user object only has `name`, you could instead store:
+        fullName: user?.name ?? "",
+        email: user?.email ?? "",
+        phone: (user as any)?.phone ?? "",
+
         isDelivered: false,
         productIds: productIds.length === 1 ? productIds[0] : productIds, // string if single, array if multiple
         items: cartItems,
@@ -247,96 +249,7 @@ const Checkout: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Checkout Form */}
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-8">
-          {/* Contact Information */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-700 mb-2">First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                  aria-invalid={!!errors.firstName}
-                  aria-describedby={
-                    errors.firstName ? "firstName-error" : undefined
-                  }
-                  className={`w-full border rounded-lg px-4 py-2 ${
-                    errors.firstName ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.firstName && (
-                  <p id="firstName-error" className="text-red-500 text-sm mt-1">
-                    {errors.firstName}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-gray-700 mb-2">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
-                  aria-invalid={!!errors.lastName}
-                  aria-describedby={
-                    errors.lastName ? "lastName-error" : undefined
-                  }
-                  className={`w-full border rounded-lg px-4 py-2 ${
-                    errors.lastName ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.lastName && (
-                  <p id="lastName-error" className="text-red-500 text-sm mt-1">
-                    {errors.lastName}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  aria-invalid={!!errors.email}
-                  aria-describedby={errors.email ? "email-error" : undefined}
-                  className={`w-full border rounded-lg px-4 py-2 ${
-                    errors.email ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.email && (
-                  <p id="email-error" className="text-red-500 text-sm mt-1">
-                    {errors.email}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-gray-700 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  aria-invalid={!!errors.phone}
-                  aria-describedby={errors.phone ? "phone-error" : undefined}
-                  className={`w-full border rounded-lg px-4 py-2 ${
-                    errors.phone ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.phone && (
-                  <p id="phone-error" className="text-red-500 text-sm mt-1">
-                    {errors.phone}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+          
 
           {/* Shipping Address */}
           <div className="bg-white rounded-lg shadow-md p-6">

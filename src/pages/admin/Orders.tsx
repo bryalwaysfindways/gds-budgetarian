@@ -137,6 +137,7 @@ export default function Orders() {
 
   // Calculate overall statistics
   const getOverallStats = (): OrderStats => {
+    
     return {
       total: orders.length,
       pending: orders.filter(o => o.status === 'pending').length,

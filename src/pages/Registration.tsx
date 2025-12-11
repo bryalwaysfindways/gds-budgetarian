@@ -1,3 +1,7 @@
+// Registration.tsx
+// Handles new user sign-up, stores user profile in Firestore,
+// and sends an email verification via EmailJS.
+
 import React, { useState } from "react";
 import { auth, db } from "../lib/firebase";
 import {
@@ -11,18 +15,21 @@ import toast from "react-hot-toast";
 import emailjs from "@emailjs/browser";
 
 const Registration: React.FC = () => {
+  // Local form state for all registration fields
   const [formData, setFormData] = useState({
-    username: "",
+    username: "",        // full name
     email: "",
-    phone: "+63",
+    phone: "+63",        // PH phone starting prefix
     address: "",
     password: "",
     confirmPassword: "",
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Generic handler for all text inputs except phone
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -31,11 +38,15 @@ const Registration: React.FC = () => {
     }));
   };
 
+  // Special handler for phone that always forces "+63" at the start
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
+
+    // Ensure phone always starts with +63
     if (!value.startsWith("+63")) {
       value = "+63" + value.replace("+63", "");
     }
+
     setFormData((prev) => ({
       ...prev,
       phone: value,
@@ -46,25 +57,30 @@ const Registration: React.FC = () => {
     e.preventDefault();
     setError("");
 
-    // Validation
+    // --- BASIC VALIDATION ---
+
+    // 1. Passwords must match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
+    // 2. Minimum password length
     if (formData.password.length < 6) {
       setError("Password should be at least 6 characters long");
       return;
     }
 
+    // 3. Phone must be PH format: +63 + 10 digits = 13 chars
     if (!formData.phone.startsWith("+63") || formData.phone.length !== 13) {
       setError("Please enter a valid Philippine phone number (+63XXXXXXXXXX)");
       return;
     }
 
     setLoading(true);
+
     try {
-      // 1. Create user with Firebase Auth
+      // --- STEP 1: Create user in Firebase Auth ---
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -72,30 +88,32 @@ const Registration: React.FC = () => {
       );
       const user = userCredential.user;
 
-      // 2. Update profile with display name
+      // --- STEP 2: Update Auth profile with display name ---
       await updateProfile(user, {
-        displayName: formData.username,
+        displayName: formData.username, // this is the full name
       });
 
-      // 3. Create Firestore user document with emailVerified: false
+      // --- STEP 3: Create Firestore user document ---
+      // IMPORTANT: This is where we save name + phone + address.
+      // We'll later read these values in useAuthStore / Checkout / My Orders.
       await setDoc(doc(db, "users", user.uid), {
         id: user.uid,
         email: formData.email,
-        name: formData.username,
-        phone: formData.phone,
+        name: formData.username,       // full name
+        phone: formData.phone,         // e.g. "+639XXXXXXXXX"
         address: formData.address,
         role: "user",
-        addresses: [],
+        addresses: [],                 // placeholder if you add multiple addresses later
         emailVerified: false,
-        createdAt: new Date(),
+        createdAt: new Date(),         // you can switch to server Timestamp if you like
       });
 
-      // 4. Generate verification token
+      // --- STEP 4: Generate a verification token string ---
       const token = `${user.uid}_${Date.now()}_${Math.random()
         .toString(36)
         .substring(2, 15)}`;
 
-      // 5. Store verification token in Firestore (expires in 24 hours)
+      // --- STEP 5: Store verification token in Firestore (expires in 24 hours) ---
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
 
@@ -106,10 +124,10 @@ const Registration: React.FC = () => {
         expiresAt: expiresAt,
       });
 
-      // 6. Create verification link
+      // --- STEP 6: Build verification link for the email ---
       const verificationLink = `${window.location.origin}/verify-email?token=${token}`;
 
-      // 7. Send verification email via EmailJS
+      // --- STEP 7: Send verification email via EmailJS ---
       const emailParams = {
         to_email: formData.email,
         from_email: "noreply@gdsbudgetarian.com",
@@ -124,10 +142,10 @@ const Registration: React.FC = () => {
         "gwBiOtZu_hHDvcA_Y"
       );
 
-      // 8. Sign out the user
+      // --- STEP 8: Sign out so user must verify before logging in ---
       await signOut(auth);
 
-      // 9. Show success message and redirect to login
+      // --- STEP 9: Notify & redirect to login ---
       toast.success(
         "Registration successful! Please check your email to verify your account."
       );
@@ -135,6 +153,8 @@ const Registration: React.FC = () => {
       navigate("/login");
     } catch (err: any) {
       console.error("Registration error:", err);
+
+      // Handle different error cases nicely
       if (err.code === "auth/email-already-in-use") {
         setError("This email is already registered. Please login instead.");
       } else if (err.text) {
@@ -153,7 +173,6 @@ const Registration: React.FC = () => {
       style={{
         minHeight: "100vh",
         width: "100%",
-
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -161,7 +180,7 @@ const Registration: React.FC = () => {
         overflow: "hidden",
       }}
     >
-      {/* Logo */}
+      {/* Center top logo */}
       <div
         style={{
           position: "absolute",
@@ -184,7 +203,8 @@ const Registration: React.FC = () => {
           }}
         />
       </div>
-      {/* Registration Card */}
+
+      {/* Card container */}
       <div
         style={{
           maxWidth: 420,
@@ -199,7 +219,7 @@ const Registration: React.FC = () => {
           zIndex: 3,
         }}
       >
-        {/* Added Back Button in the Register */}
+        {/* Back link */}
         <button
           onClick={() => navigate(-1)}
           style={{
@@ -217,6 +237,8 @@ const Registration: React.FC = () => {
         >
           ← Back
         </button>
+
+        {/* Title */}
         <h2
           style={{
             marginBottom: 28,
@@ -231,7 +253,10 @@ const Registration: React.FC = () => {
         >
           Create Your Account
         </h2>
+
+        {/* FORM */}
         <form onSubmit={handleRegister}>
+          {/* Full name */}
           <input
             type="text"
             name="username"
@@ -254,6 +279,8 @@ const Registration: React.FC = () => {
             }}
             required
           />
+
+          {/* Email */}
           <input
             type="email"
             name="email"
@@ -276,6 +303,8 @@ const Registration: React.FC = () => {
             }}
             required
           />
+
+          {/* Phone */}
           <input
             type="tel"
             name="phone"
@@ -298,6 +327,8 @@ const Registration: React.FC = () => {
             }}
             required
           />
+
+          {/* Address */}
           <input
             type="text"
             name="address"
@@ -320,6 +351,8 @@ const Registration: React.FC = () => {
             }}
             required
           />
+
+          {/* Password */}
           <input
             type="password"
             name="password"
@@ -342,6 +375,8 @@ const Registration: React.FC = () => {
             }}
             required
           />
+
+          {/* Confirm Password */}
           <input
             type="password"
             name="confirmPassword"
@@ -364,6 +399,8 @@ const Registration: React.FC = () => {
             }}
             required
           />
+
+          {/* Submit button */}
           <button
             type="submit"
             disabled={loading}
@@ -387,6 +424,8 @@ const Registration: React.FC = () => {
             {loading ? "Registering..." : "Register"}
           </button>
         </form>
+
+        {/* Error display */}
         {error && (
           <div
             style={{
