@@ -30,6 +30,33 @@ import {
 } from "lucide-react";
 import AdminHeader from "../../components/AdminHeader";
 
+/**
+ * ⭐ Helper: compute the label we show for "customer name"
+ * Priority:
+ * 1) customerName
+ * 2) shippingAddress.name
+ * 3) firstName + lastName
+ * 4) email
+ * 5) "Customer"
+ */
+const getOrderCustomerLabel = (order: Order): string => {
+  const o: any = order;
+
+  const fullName =
+    (o.firstName || o.lastName
+      ? `${o.firstName ?? ""} ${o.lastName ?? ""}`.trim()
+      : "") || "";
+
+  return (
+    o.customerName ||
+    o.shippingAddress?.name ||
+    fullName ||
+    o.email ||
+    o.shippingAddress?.email ||
+    "Customer"
+  );
+};
+
 export default function StaffDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +69,7 @@ export default function StaffDashboard() {
     useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 🔵 NEW: track which orders are selected for bulk actions (checkboxes)
+  // 🔵 track which orders are selected for bulk actions (checkboxes)
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   const { user } = useAuthStore();
@@ -59,30 +86,26 @@ export default function StaffDashboard() {
     fetchOrders();
   }, []);
 
-  // 🔵 NEW: helper to toggle a single order's selection (checkbox)
+  // 🔵 toggle a single order's selection (checkbox)
   const toggleSelectOrder = (orderId: string) => {
-    setSelectedOrders(
-      (prev) =>
-        prev.includes(orderId)
-          ? prev.filter((id) => id !== orderId) // if already selected → unselect
-          : [...prev, orderId] // otherwise add to selected list
+    setSelectedOrders((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId]
     );
   };
 
-  // 🔵 NEW: helper to toggle "Select All" for current filtered orders
+  // 🔵 toggle "Select All" for current filtered orders
   const toggleSelectAll = () => {
-    // If all visible orders are already selected → unselect all visible
     const allVisibleSelected =
       filteredOrders.length > 0 &&
       filteredOrders.every((order) => selectedOrders.includes(order.id));
 
     if (allVisibleSelected) {
-      // Remove only IDs that belong to the currently visible orders
       setSelectedOrders((prev) =>
         prev.filter((id) => !filteredOrders.some((o) => o.id === id))
       );
     } else {
-      // Add all visible order IDs to the selected list (without duplicates)
       setSelectedOrders((prev) => {
         const visibleIds = filteredOrders.map((o) => o.id);
         const merged = new Set([...prev, ...visibleIds]);
@@ -91,9 +114,9 @@ export default function StaffDashboard() {
     }
   };
 
-  // 🔵 NEW: bulk delete for all selected order IDs
+  // 🔵 bulk delete for all selected order IDs
   const deleteSelectedOrders = async () => {
-    if (selectedOrders.length === 0) return; // nothing selected, do nothing
+    if (selectedOrders.length === 0) return;
 
     const confirmed = window.confirm(
       `Are you sure you want to delete ${selectedOrders.length} selected order(s)?\n\nThis action cannot be undone.`
@@ -102,17 +125,12 @@ export default function StaffDashboard() {
     if (!confirmed) return;
 
     try {
-      // Delete each selected order document from Firestore
       for (const id of selectedOrders) {
         await deleteDoc(doc(db, "orders", id));
       }
 
-      // Remove deleted orders from local state
       setOrders((prev) => prev.filter((o) => !selectedOrders.includes(o.id)));
-
-      // Clear the selection state
       setSelectedOrders([]);
-
       toast.success("Selected orders deleted successfully");
     } catch (error) {
       console.error("Error deleting selected orders:", error);
@@ -125,34 +143,27 @@ export default function StaffDashboard() {
     const state = location.state as { orderId?: string };
     const orderId = state?.orderId;
     if (orderId && orders.length > 0) {
-      // Check if mobile (screen width < 768px which is md breakpoint)
       const isMobile = window.innerWidth < 768;
-
-      // Find the order
       const order = orders.find((o) => o.id === orderId);
 
       if (isMobile && order) {
-        // On mobile, open modal
         setTimeout(() => {
           setSelectedOrderForModal(order);
           setIsModalOpen(true);
         }, 100);
       } else {
-        // On desktop, expand the order
         setTimeout(() => {
           setExpandedOrders((prev) => ({
             ...prev,
             [orderId]: true,
           }));
 
-          // Scroll to the order
           const orderElement = document.getElementById(`order-${orderId}`);
           if (orderElement) {
             orderElement.scrollIntoView({
               behavior: "smooth",
               block: "center",
             });
-            // Highlight the order briefly
             orderElement.classList.add(
               "ring-4",
               "ring-blue-400",
@@ -174,7 +185,6 @@ export default function StaffDashboard() {
   const fetchProductDetails = async (
     productId: string
   ): Promise<Product | null> => {
-    // Check cache first
     if (productCache[productId]) {
       return productCache[productId];
     }
@@ -204,11 +214,11 @@ export default function StaffDashboard() {
       const ordersRef = collection(db, "orders");
       const snapshot = await getDocs(ordersRef);
 
-      const ordersData = snapshot.docs.map((doc) => {
-        const data = doc.data();
+      const ordersData = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
         return {
           ...data,
-          id: doc.id,
+          id: docSnap.id,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
           statusHistory:
@@ -219,18 +229,14 @@ export default function StaffDashboard() {
         } as Order;
       });
 
-      // Sort orders by date (newest first)
       ordersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
       setOrders(ordersData);
 
-      // Prefetch product details for all order items
       const productIds = new Set<string>();
       ordersData.forEach((order) => {
         order.items.forEach((item) => productIds.add(item.productId));
       });
 
-      // Fetch all products in parallel
       await Promise.all(
         Array.from(productIds).map((productId) =>
           fetchProductDetails(productId)
@@ -249,14 +255,12 @@ export default function StaffDashboard() {
       const order = orders.find((o) => o.id === orderId);
       if (!order) return;
 
-      // Create new status history entry
       const newHistoryEntry = {
         status: newStatus as any,
         timestamp: Timestamp.now(),
         updatedBy: user?.email || "staff",
       };
 
-      // Get existing history or initialize
       const existingHistory = order.statusHistory || [];
       const updatedHistory = [...existingHistory, newHistoryEntry];
 
@@ -267,7 +271,6 @@ export default function StaffDashboard() {
         statusHistory: updatedHistory,
       });
 
-      // Update local state
       setOrders(
         orders.map((o) =>
           o.id === orderId
@@ -298,18 +301,9 @@ export default function StaffDashboard() {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return;
 
-    const customerName = (
-      <span className="ml-2">
-        {(order as any).customerName ||
-          order.shippingAddress?.name ||
-          `${(order as any).firstName || ""} ${
-            (order as any).lastName || ""
-          }`.trim() ||
-          "N/A"}
-      </span>
-    );
+    // ⭐ use helper so dialog shows a proper name/email, not N/A or [object Object]
+    const customerName = getOrderCustomerLabel(order);
 
-    // Show confirmation dialog
     const confirmed = window.confirm(
       `Are you sure you want to delete this order?\n\n` +
         `Customer: ${customerName}\n` +
@@ -323,23 +317,17 @@ export default function StaffDashboard() {
     if (!confirmed) return;
 
     try {
-      // Delete from Firestore
       await deleteDoc(doc(db, "orders", orderId));
 
-      // Update local state: remove the single order
       setOrders(orders.filter((o) => o.id !== orderId));
-
-      // 🔵 NEW: also remove this order from the "selected" list if it was checked
       setSelectedOrders((prev) => prev.filter((id) => id !== orderId));
 
-      // Close the expanded order if it was open
       setExpandedOrders((prev) => {
         const newState = { ...prev };
         delete newState[orderId];
         return newState;
       });
 
-      // Close modal if this order was open
       if (selectedOrderForModal?.id === orderId) {
         setIsModalOpen(false);
         setSelectedOrderForModal(null);
@@ -361,7 +349,7 @@ export default function StaffDashboard() {
     selectedStatus === "all"
       ? orders
       : orders.filter((order) => order.status === selectedStatus)
-  ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by date (newest first)
+  ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -403,14 +391,13 @@ export default function StaffDashboard() {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
-  // Convenience: compute once whether all visible orders are selected (for "Select All" checkbox)
+  // compute once whether all visible orders are selected
   const allVisibleSelected =
     filteredOrders.length > 0 &&
     filteredOrders.every((order) => selectedOrders.includes(order.id));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-red-50">
-      {/* Header with notifications and profile */}
       <AdminHeader />
 
       <div className="container-fluid px-4 py-8">
@@ -459,7 +446,7 @@ export default function StaffDashboard() {
             </div>
           ) : (
             <>
-              {/* Mobile Card View (no bulk delete UI here to keep it simple) */}
+              {/* Mobile Card View */}
               <div className="md:hidden space-y-4 p-4">
                 {filteredOrders.map((order) => (
                   <div
@@ -467,16 +454,11 @@ export default function StaffDashboard() {
                     className="bg-white rounded-lg shadow-md p-4 border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
                     onClick={() => openOrderModal(order)}
                   >
-                    {/* Customer Name and Order Info */}
                     <div className="mb-3">
                       <h3 className="font-semibold text-gray-900">
+                        {/* ⭐ Use helper so we never show N/A if email exists */}
                         <span className="ml-2">
-                          {(order as any).customerName ||
-                            order.shippingAddress?.name ||
-                            `${(order as any).firstName || ""} ${
-                              (order as any).lastName || ""
-                            }`.trim() ||
-                            "N/A"}
+                          {getOrderCustomerLabel(order)}
                         </span>
                       </h3>
                       <p className="text-xs text-gray-500">
@@ -485,7 +467,6 @@ export default function StaffDashboard() {
                       </p>
                     </div>
 
-                    {/* Order Details */}
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="text-lg font-bold text-gray-900">
@@ -508,7 +489,6 @@ export default function StaffDashboard() {
                       </span>
                     </div>
 
-                    {/* View Details Button */}
                     <button
                       className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-medium rounded-lg hover:from-red-600 hover:to-red-700 transition-all"
                       onClick={(e) => {
@@ -525,7 +505,6 @@ export default function StaffDashboard() {
 
               {/* Desktop Expandable View with bulk selection */}
               <div className="hidden md:block">
-                {/* 🔵 NEW: Bulk selection toolbar for desktop */}
                 <div className="flex items-center justify-between px-6 py-3 border-b bg-yellow-50">
                   <div className="flex items-center gap-2">
                     <input
@@ -560,19 +539,18 @@ export default function StaffDashboard() {
                       id={`order-${order.id}`}
                       className="bg-white transition-all duration-200"
                     >
-                      {/* Order header - always visible */}
+                      {/* Header row */}
                       <div
                         className="p-4 md:px-6 flex flex-wrap md:flex-nowrap items-center justify-between gap-4 cursor-pointer hover:bg-yellow-50 transition-colors"
                         onClick={() => toggleOrderDetails(order.id)}
                       >
                         <div className="flex items-center gap-3 w-full md:w-auto">
-                          {/* 🔵 NEW: per-row checkbox for bulk selection */}
                           <input
                             type="checkbox"
                             className="w-4 h-4 cursor-pointer accent-red-600"
                             checked={selectedOrders.includes(order.id)}
                             onChange={(e) => {
-                              e.stopPropagation(); // don't toggle expand
+                              e.stopPropagation();
                               toggleSelectOrder(order.id);
                             }}
                           />
@@ -584,13 +562,9 @@ export default function StaffDashboard() {
                           )}
                           <div>
                             <p className="font-medium text-gray-900">
+                              {/* ⭐ Use helper here too */}
                               <span className="ml-2">
-                                {(order as any).customerName ||
-                                  order.shippingAddress?.name ||
-                                  `${(order as any).firstName || ""} ${
-                                    (order as any).lastName || ""
-                                  }`.trim() ||
-                                  "N/A"}
+                                {getOrderCustomerLabel(order)}
                               </span>
                             </p>
                             <p className="text-sm text-gray-500">
@@ -624,10 +598,10 @@ export default function StaffDashboard() {
                         </div>
                       </div>
 
-                      {/* Order details - expandable */}
+                      {/* Expanded details */}
                       {expandedOrders[order.id] && (
                         <div className="p-4 md:px-6 pt-0 bg-yellow-50 border-t border-yellow-100">
-                          {/* Order ID and Date */}
+                          {/* Order ID + date */}
                           <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                               <div>
@@ -666,12 +640,8 @@ export default function StaffDashboard() {
                                     Name:
                                   </span>
                                   <span className="ml-2">
-                                    {(order as any).customerName ||
-                                      order.shippingAddress?.name ||
-                                      `${(order as any).firstName || ""} ${
-                                        (order as any).lastName || ""
-                                      }`.trim() ||
-                                      "N/A"}
+                                    {/* ⭐ Helper used again */}
+                                    {getOrderCustomerLabel(order)}
                                   </span>
                                 </p>
                                 <p>
@@ -728,7 +698,7 @@ export default function StaffDashboard() {
                             </div>
                           </div>
 
-                          {/* Payment Information */}
+                          {/* Payment info */}
                           <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
                             <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                               <ShoppingBag className="w-5 h-5 text-green-600" />
@@ -752,7 +722,6 @@ export default function StaffDashboard() {
                                 </span>
                               </div>
 
-                              {/* Valid ID for COD */}
                               {(order as any).paymentMethod === "cod" &&
                                 (order as any).validIdUrl && (
                                   <div className="border-t pt-3 mt-3">
@@ -783,7 +752,6 @@ export default function StaffDashboard() {
                                   </div>
                                 )}
 
-                              {/* GCash Number */}
                               {(order as any).paymentMethod === "gcash" &&
                                 (order as any).gcashNumber && (
                                   <div className="border-t pt-3 mt-3">
@@ -798,7 +766,7 @@ export default function StaffDashboard() {
                             </div>
                           </div>
 
-                          {/* Order items */}
+                          {/* Items */}
                           <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
                             <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                               <Package className="w-5 h-5 text-purple-600" />
@@ -835,18 +803,16 @@ export default function StaffDashboard() {
                                     </div>
                                     <p className="font-semibold text-lg">
                                       ₱
-                                      {(
-                                        item.price * item.quantity
-                                      ).toLocaleString("en-PH", {
-                                        minimumFractionDigits: 2,
-                                      })}
+                                      {(item.price * item.quantity).toLocaleString(
+                                        "en-PH",
+                                        { minimumFractionDigits: 2 }
+                                      )}
                                     </p>
                                   </div>
                                 );
                               })}
                             </div>
 
-                            {/* Order Summary with breakdown */}
                             <div className="mt-4 pt-4 border-t-2 border-gray-200 space-y-2">
                               <div className="flex justify-between text-sm">
                                 <p className="text-gray-600">Subtotal:</p>
@@ -872,7 +838,7 @@ export default function StaffDashboard() {
                             </div>
                           </div>
 
-                          {/* Status History */}
+                          {/* Status history */}
                           {order.statusHistory &&
                             order.statusHistory.length > 0 && (
                               <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
@@ -892,7 +858,7 @@ export default function StaffDashboard() {
                                         b.timestamp instanceof Date
                                           ? b.timestamp.getTime()
                                           : new Date(b.timestamp).getTime();
-                                      return timeB - timeA; // newest first
+                                      return timeB - timeA;
                                     })
                                     .map((history, index) => (
                                       <div
@@ -954,20 +920,17 @@ export default function StaffDashboard() {
                               </div>
                             )}
 
-                          {/* Order actions */}
+                          {/* Actions */}
                           <div className="p-4 bg-white rounded-lg shadow-sm flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                               <h3 className="font-semibold text-gray-800">
                                 Update Status
                               </h3>
-                              {/* if order is cancelled, do not show controls */}
                               {order.status === "cancelled" ? (
                                 <p className="text-sm text-gray-500 italic">
                                   This order has been cancelled.
                                 </p>
                               ) : (
-                                // Status is saved immediately via dropdown onChange.
-                                // We removed the extra "Update" button to avoid double actions.
                                 <div className="flex items-center gap-2">
                                   <select
                                     value={order.status || "pending"}
@@ -1015,11 +978,10 @@ export default function StaffDashboard() {
         </div>
       </div>
 
-      {/* Order Details Modal */}
+      {/* Modal */}
       {isModalOpen && selectedOrderForModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto my-8">
-            {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
               <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
               <button
@@ -1033,9 +995,8 @@ export default function StaffDashboard() {
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="p-4 space-y-4">
-              {/* Order ID and Date */}
+              {/* Order ID + date + status */}
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="space-y-2 text-sm">
                   <div>
@@ -1070,7 +1031,7 @@ export default function StaffDashboard() {
                 </div>
               </div>
 
-              {/* Customer Information */}
+              {/* Customer information */}
               <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
                 <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <Users className="w-5 h-5 text-blue-600" />
@@ -1080,11 +1041,8 @@ export default function StaffDashboard() {
                   <p>
                     <span className="text-gray-500 font-medium">Name:</span>
                     <span className="ml-2">
-                      {selectedOrderForModal.shippingAddress?.name ||
-                        `${(selectedOrderForModal as any).firstName || ""} ${
-                          (selectedOrderForModal as any).lastName || ""
-                        }`.trim() ||
-                        "N/A"}
+                      {/* ⭐ Helper in modal as well */}
+                      {getOrderCustomerLabel(selectedOrderForModal)}
                     </span>
                   </p>
                   <p>
@@ -1130,7 +1088,7 @@ export default function StaffDashboard() {
                 </div>
               </div>
 
-              {/* Payment Information */}
+              {/* Payment info */}
               <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
                 <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-green-600" />
@@ -1154,7 +1112,6 @@ export default function StaffDashboard() {
                     </span>
                   </div>
 
-                  {/* Valid ID for COD */}
                   {(selectedOrderForModal as any).paymentMethod === "cod" &&
                     (selectedOrderForModal as any).validIdUrl && (
                       <div className="border-t pt-3 mt-3">
@@ -1181,7 +1138,6 @@ export default function StaffDashboard() {
                       </div>
                     )}
 
-                  {/* GCash Number */}
                   {(selectedOrderForModal as any).paymentMethod === "gcash" &&
                     (selectedOrderForModal as any).gcashNumber && (
                       <div className="border-t pt-3 mt-3">
@@ -1196,7 +1152,7 @@ export default function StaffDashboard() {
                 </div>
               </div>
 
-              {/* Order Items */}
+              {/* Items */}
               <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
                 <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <Package className="w-5 h-5 text-purple-600" />
@@ -1240,7 +1196,7 @@ export default function StaffDashboard() {
                   })}
                 </div>
 
-                {/* Order Summary */}
+                {/* Summary */}
                 <div className="mt-4 pt-4 border-t-2 border-gray-200 space-y-2">
                   <div className="flex justify-between text-sm">
                     <p className="text-gray-600">Subtotal:</p>
@@ -1265,7 +1221,7 @@ export default function StaffDashboard() {
                 </div>
               </div>
 
-              {/* Status History */}
+              {/* Status history */}
               {selectedOrderForModal.statusHistory &&
                 selectedOrderForModal.statusHistory.length > 0 && (
                   <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
@@ -1319,16 +1275,15 @@ export default function StaffDashboard() {
                                       hour: "2-digit",
                                       minute: "2-digit",
                                     })
-                                  : new Date(history.timestamp).toLocaleString(
-                                      "en-PH",
-                                      {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      }
-                                    )}
+                                  : new Date(
+                                      history.timestamp
+                                    ).toLocaleString("en-PH", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
                               </p>
                               {history.updatedBy && (
                                 <p className="text-xs text-gray-500 mt-1">
@@ -1345,7 +1300,7 @@ export default function StaffDashboard() {
                   </div>
                 )}
 
-              {/* Actions */}
+              {/* Actions in modal */}
               <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
                 <h3 className="font-semibold text-gray-800 mb-3">
                   Update Status
@@ -1358,7 +1313,6 @@ export default function StaffDashboard() {
                         selectedOrderForModal.id,
                         e.target.value
                       );
-                      // Update the modal's order state
                       setSelectedOrderForModal({
                         ...selectedOrderForModal,
                         status: e.target.value as any,
@@ -1383,7 +1337,6 @@ export default function StaffDashboard() {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-end">
               <button
                 onClick={() => {
@@ -1401,3 +1354,5 @@ export default function StaffDashboard() {
     </div>
   );
 }
+
+3

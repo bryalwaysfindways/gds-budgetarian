@@ -1,8 +1,13 @@
-
-import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import { db } from "../../lib/firebase";
+import toast from "react-hot-toast";
 import {
   Package,
   TrendingUp,
@@ -15,9 +20,9 @@ import {
   Truck,
   AlertCircle,
   X,
-  Trash2
-} from 'lucide-react';
-import { Order, Product } from '../../types';
+  Trash2,
+} from "lucide-react";
+import { Order, Product } from "../../types";
 
 interface OrderStats {
   total: number;
@@ -41,11 +46,33 @@ interface OrderProduct {
   quantity: number;
   price: number;
 }
+// ✅ NEW HELPER: decide what to show for "customer"
+// Priority:
+// 1) order.email
+// 2) order.shippingAddress.email
+// 3) order.shippingAddress.name
+// 4) firstName + lastName
+// 5) "Customer" as last fallback
+const getOrderCustomerLabel = (order: Order): string => {
+  const o: any = order; // allow flexible fields coming from Firestore
+
+  return (
+    o.email || // 1. email saved on order
+    o.shippingAddress?.email || // 2. email inside shippingAddress
+    o.shippingAddress?.name || // 3. full name on shippingAddress
+    (o.firstName || o.lastName // 4. combine first/last name
+      ? `${o.firstName ?? ""} ${o.lastName ?? ""}`.trim()
+      : "") ||
+    "Customer" // 5. only if everything else is missing
+  );
+};
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [viewMode, setViewMode] = useState<"daily" | "weekly" | "monthly">(
+    "daily"
+  );
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -61,10 +88,10 @@ export default function Orders() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const ordersRef = collection(db, 'orders');
+      const ordersRef = collection(db, "orders");
       const snapshot = await getDocs(ordersRef);
 
-      const ordersData = snapshot.docs.map(doc => {
+      const ordersData = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           ...data,
@@ -77,8 +104,8 @@ export default function Orders() {
       ordersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       setOrders(ordersData);
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast.error('Failed to load orders');
+      console.error("Error fetching orders:", error);
+      toast.error("Failed to load orders");
     } finally {
       setLoading(false);
     }
@@ -94,27 +121,30 @@ export default function Orders() {
       const productsData: OrderProduct[] = await Promise.all(
         order.items.map(async (item) => {
           try {
-            const productRef = doc(db, 'products', item.productId);
+            const productRef = doc(db, "products", item.productId);
             const productSnap = await getDoc(productRef);
 
             if (productSnap.exists()) {
               return {
-                product: { id: productSnap.id, ...productSnap.data() } as Product,
+                product: {
+                  id: productSnap.id,
+                  ...productSnap.data(),
+                } as Product,
                 quantity: item.quantity,
-                price: item.price
+                price: item.price,
               };
             }
             return {
               product: null,
               quantity: item.quantity,
-              price: item.price
+              price: item.price,
             };
           } catch (error) {
             console.error(`Error fetching product ${item.productId}:`, error);
             return {
               product: null,
               quantity: item.quantity,
-              price: item.price
+              price: item.price,
             };
           }
         })
@@ -122,8 +152,8 @@ export default function Orders() {
 
       setOrderProducts(productsData);
     } catch (error) {
-      console.error('Error fetching order products:', error);
-      toast.error('Failed to load order products');
+      console.error("Error fetching order products:", error);
+      toast.error("Failed to load order products");
     } finally {
       setLoadingProducts(false);
     }
@@ -137,14 +167,13 @@ export default function Orders() {
 
   // Calculate overall statistics
   const getOverallStats = (): OrderStats => {
-    
     return {
       total: orders.length,
-      pending: orders.filter(o => o.status === 'pending').length,
-      processing: orders.filter(o => o.status === 'processing').length,
-      shipped: orders.filter(o => o.status === 'shipped').length,
-      delivered: orders.filter(o => o.status === 'delivered').length,
-      cancelled: orders.filter(o => o.status === 'cancelled').length,
+      pending: orders.filter((o) => o.status === "pending").length,
+      processing: orders.filter((o) => o.status === "processing").length,
+      shipped: orders.filter((o) => o.status === "shipped").length,
+      delivered: orders.filter((o) => o.status === "delivered").length,
+      cancelled: orders.filter((o) => o.status === "cancelled").length,
       totalRevenue: orders.reduce((sum, o) => sum + (o.total || 0), 0),
     };
   };
@@ -153,7 +182,7 @@ export default function Orders() {
   const getTodayOrders = (): Order[] => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return orders.filter(order => {
+    return orders.filter((order) => {
       const orderDate = new Date(order.createdAt);
       orderDate.setHours(0, 0, 0, 0);
       return orderDate.getTime() === today.getTime();
@@ -174,7 +203,7 @@ export default function Orders() {
     sunday.setDate(monday.getDate() + 6);
     sunday.setHours(23, 59, 59, 999);
 
-    return orders.filter(order => {
+    return orders.filter((order) => {
       const orderDate = new Date(order.createdAt);
       return orderDate >= monday && orderDate <= sunday;
     });
@@ -182,15 +211,18 @@ export default function Orders() {
 
   // Group orders by date for the current month
   const getDailyOrdersForMonth = (): DailyOrders[] => {
-    const monthOrders = orders.filter(order => {
+    const monthOrders = orders.filter((order) => {
       const orderDate = new Date(order.createdAt);
-      return orderDate.getMonth() === selectedMonth && orderDate.getFullYear() === selectedYear;
+      return (
+        orderDate.getMonth() === selectedMonth &&
+        orderDate.getFullYear() === selectedYear
+      );
     });
 
     const groupedByDate: { [key: string]: Order[] } = {};
 
-    monthOrders.forEach(order => {
-      const dateKey = new Date(order.createdAt).toLocaleDateString('en-PH');
+    monthOrders.forEach((order) => {
+      const dateKey = new Date(order.createdAt).toLocaleDateString("en-PH");
       if (!groupedByDate[dateKey]) {
         groupedByDate[dateKey] = [];
       }
@@ -210,18 +242,22 @@ export default function Orders() {
   const handleDeleteOrder = async (orderId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent triggering order click
 
-    if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this order? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
     setDeletingOrderId(orderId);
     try {
-      await deleteDoc(doc(db, 'orders', orderId));
-      setOrders(orders.filter(order => order.id !== orderId));
-      toast.success('Order deleted successfully');
+      await deleteDoc(doc(db, "orders", orderId));
+      setOrders(orders.filter((order) => order.id !== orderId));
+      toast.success("Order deleted successfully");
     } catch (error) {
-      console.error('Error deleting order:', error);
-      toast.error('Failed to delete order');
+      console.error("Error deleting order:", error);
+      toast.error("Failed to delete order");
     } finally {
       setDeletingOrderId(null);
     }
@@ -234,29 +270,51 @@ export default function Orders() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'shipped': return 'bg-purple-100 text-purple-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "processing":
+        return "bg-blue-100 text-blue-800";
+      case "shipped":
+        return "bg-purple-100 text-purple-800";
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'processing': return <Package className="w-4 h-4" />;
-      case 'shipped': return <Truck className="w-4 h-4" />;
-      case 'delivered': return <CheckCircle className="w-4 h-4" />;
-      case 'cancelled': return <AlertCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case "pending":
+        return <Clock className="w-4 h-4" />;
+      case "processing":
+        return <Package className="w-4 h-4" />;
+      case "shipped":
+        return <Truck className="w-4 h-4" />;
+      case "delivered":
+        return <CheckCircle className="w-4 h-4" />;
+      case "cancelled":
+        return <AlertCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   if (loading) {
@@ -273,7 +331,9 @@ export default function Orders() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Orders Overview</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          Orders Overview
+        </h1>
         <div className="w-20 h-1 bg-gradient-to-r from-red-500 to-yellow-400 rounded-full"></div>
       </div>
 
@@ -283,7 +343,9 @@ export default function Orders() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Orders</p>
-              <p className="text-3xl font-bold text-gray-800 mt-1">{stats.total}</p>
+              <p className="text-3xl font-bold text-gray-800 mt-1">
+                {stats.total}
+              </p>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <ShoppingCart className="w-8 h-8 text-blue-600" />
@@ -296,7 +358,10 @@ export default function Orders() {
             <div>
               <p className="text-gray-500 text-sm font-medium">Total Revenue</p>
               <p className="text-3xl font-bold text-gray-800 mt-1">
-                ₱{stats.totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                ₱
+                {stats.totalRevenue.toLocaleString("en-PH", {
+                  minimumFractionDigits: 2,
+                })}
               </p>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
@@ -308,8 +373,12 @@ export default function Orders() {
         <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium">Pending Orders</p>
-              <p className="text-3xl font-bold text-gray-800 mt-1">{stats.pending}</p>
+              <p className="text-gray-500 text-sm font-medium">
+                Pending Orders
+              </p>
+              <p className="text-3xl font-bold text-gray-800 mt-1">
+                {stats.pending}
+              </p>
             </div>
             <div className="bg-yellow-100 p-3 rounded-full">
               <Clock className="w-8 h-8 text-yellow-600" />
@@ -321,7 +390,9 @@ export default function Orders() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium">Delivered</p>
-              <p className="text-3xl font-bold text-gray-800 mt-1">{stats.delivered}</p>
+              <p className="text-3xl font-bold text-gray-800 mt-1">
+                {stats.delivered}
+              </p>
             </div>
             <div className="bg-purple-100 p-3 rounded-full">
               <CheckCircle className="w-8 h-8 text-purple-600" />
@@ -335,38 +406,38 @@ export default function Orders() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <button
-              onClick={() => setViewMode('daily')}
+              onClick={() => setViewMode("daily")}
               className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                viewMode === 'daily'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                viewMode === "daily"
+                  ? "bg-red-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               Today's Orders
             </button>
             <button
-              onClick={() => setViewMode('weekly')}
+              onClick={() => setViewMode("weekly")}
               className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                viewMode === 'weekly'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                viewMode === "weekly"
+                  ? "bg-red-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               Weekly View
             </button>
             <button
-              onClick={() => setViewMode('monthly')}
+              onClick={() => setViewMode("monthly")}
               className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                viewMode === 'monthly'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                viewMode === "monthly"
+                  ? "bg-red-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               Monthly View
             </button>
           </div>
 
-          {viewMode === 'monthly' && (
+          {viewMode === "monthly" && (
             <div className="flex gap-2 w-full sm:w-auto">
               <select
                 value={selectedMonth}
@@ -384,7 +455,7 @@ export default function Orders() {
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
                 className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm sm:text-base"
               >
-                {[2024, 2025, 2026].map(year => (
+                {[2024, 2025, 2026].map((year) => (
                   <option key={year} value={year}>
                     {year}
                   </option>
@@ -396,27 +467,36 @@ export default function Orders() {
       </div>
 
       {/* Today's Orders View */}
-      {viewMode === 'daily' && (
+      {viewMode === "daily" && (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-yellow-50">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <Calendar className="w-6 h-6 text-red-500" />
-              Today's Orders ({new Date().toLocaleDateString('en-PH', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })})
+              Today's Orders (
+              {new Date().toLocaleDateString("en-PH", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+              )
             </h2>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-6">
               <div className="bg-white px-3 sm:px-4 py-2 rounded-lg shadow-sm">
                 <p className="text-xs sm:text-sm text-gray-500">Total Orders</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-800">{todayOrders.length}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-800">
+                  {todayOrders.length}
+                </p>
               </div>
               <div className="bg-white px-3 sm:px-4 py-2 rounded-lg shadow-sm">
-                <p className="text-xs sm:text-sm text-gray-500">Today's Revenue</p>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  Today's Revenue
+                </p>
                 <p className="text-xl sm:text-2xl font-bold text-green-600">
-                  ₱{todayOrders.reduce((sum, o) => sum + o.total, 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                  ₱
+                  {todayOrders
+                    .reduce((sum, o) => sum + o.total, 0)
+                    .toLocaleString("en-PH", { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
@@ -442,10 +522,11 @@ export default function Orders() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-800 text-base mb-1">
-                        {order.shippingAddress?.name || `${(order as any).firstName || ''} ${(order as any).lastName || ''}`.trim() || 'Customer'}
+                        {getOrderCustomerLabel(order)}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Order #{order.id.substring(0, 8)}... • {order.createdAt.toLocaleTimeString('en-PH')}
+                        Order #{order.id.substring(0, 8)}... •{" "}
+                        {order.createdAt.toLocaleTimeString("en-PH")}
                       </p>
                     </div>
                   </div>
@@ -454,13 +535,23 @@ export default function Orders() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <p className="font-bold text-xl text-gray-800">
-                        ₱{order.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        ₱
+                        {order.total.toLocaleString("en-PH", {
+                          minimumFractionDigits: 2,
+                        })}
                       </p>
-                      <p className="text-sm text-gray-500">{order.items.length} item(s)</p>
+                      <p className="text-sm text-gray-500">
+                        {order.items.length} item(s)
+                      </p>
                     </div>
-                    <span className={`px-3 py-1.5 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full ${getStatusColor(order.status || 'pending')}`}>
-                      {getStatusIcon(order.status || 'pending')}
-                      {order.status?.charAt(0).toUpperCase() + (order.status?.slice(1) || 'Pending')}
+                    <span
+                      className={`px-3 py-1.5 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full ${getStatusColor(
+                        order.status || "pending"
+                      )}`}
+                    >
+                      {getStatusIcon(order.status || "pending")}
+                      {order.status?.charAt(0).toUpperCase() +
+                        (order.status?.slice(1) || "Pending")}
                     </span>
                   </div>
 
@@ -490,12 +581,13 @@ export default function Orders() {
       )}
 
       {/* Weekly View */}
-      {viewMode === 'weekly' && (
+      {viewMode === "weekly" && (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-yellow-50">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <Calendar className="w-6 h-6 text-red-500" />
-              This Week's Orders ({(() => {
+              This Week's Orders (
+              {(() => {
                 const now = new Date();
                 const currentDay = now.getDay();
                 const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
@@ -503,18 +595,33 @@ export default function Orders() {
                 monday.setDate(now.getDate() + mondayOffset);
                 const sunday = new Date(monday);
                 sunday.setDate(monday.getDate() + 6);
-                return `${monday.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} - ${sunday.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-              })()})
+                return `${monday.toLocaleDateString("en-PH", {
+                  month: "short",
+                  day: "numeric",
+                })} - ${sunday.toLocaleDateString("en-PH", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}`;
+              })()}
+              )
             </h2>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-6">
               <div className="bg-white px-3 sm:px-4 py-2 rounded-lg shadow-sm">
                 <p className="text-xs sm:text-sm text-gray-500">Total Orders</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-800">{weeklyOrders.length}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-800">
+                  {weeklyOrders.length}
+                </p>
               </div>
               <div className="bg-white px-3 sm:px-4 py-2 rounded-lg shadow-sm">
-                <p className="text-xs sm:text-sm text-gray-500">Weekly Revenue</p>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  Weekly Revenue
+                </p>
                 <p className="text-xl sm:text-2xl font-bold text-green-600">
-                  ₱{weeklyOrders.reduce((sum, o) => sum + o.total, 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                  ₱
+                  {weeklyOrders
+                    .reduce((sum, o) => sum + o.total, 0)
+                    .toLocaleString("en-PH", { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
@@ -540,10 +647,15 @@ export default function Orders() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-800 text-base mb-1">
-                        {order.shippingAddress?.name || `${(order as any).firstName || ''} ${(order as any).lastName || ''}`.trim() || 'Customer'}
+                        {getOrderCustomerLabel(order)}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Order #{order.id.substring(0, 8)}... • {order.createdAt.toLocaleDateString('en-PH')} {order.createdAt.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
+                        Order #{order.id.substring(0, 8)}... •{" "}
+                        {order.createdAt.toLocaleDateString("en-PH")}{" "}
+                        {order.createdAt.toLocaleTimeString("en-PH", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                     </div>
                   </div>
@@ -552,13 +664,23 @@ export default function Orders() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <p className="font-bold text-xl text-gray-800">
-                        ₱{order.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        ₱
+                        {order.total.toLocaleString("en-PH", {
+                          minimumFractionDigits: 2,
+                        })}
                       </p>
-                      <p className="text-sm text-gray-500">{order.items.length} item(s)</p>
+                      <p className="text-sm text-gray-500">
+                        {order.items.length} item(s)
+                      </p>
                     </div>
-                    <span className={`px-3 py-1.5 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full ${getStatusColor(order.status || 'pending')}`}>
-                      {getStatusIcon(order.status || 'pending')}
-                      {order.status?.charAt(0).toUpperCase() + (order.status?.slice(1) || 'Pending')}
+                    <span
+                      className={`px-3 py-1.5 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full ${getStatusColor(
+                        order.status || "pending"
+                      )}`}
+                    >
+                      {getStatusIcon(order.status || "pending")}
+                      {order.status?.charAt(0).toUpperCase() +
+                        (order.status?.slice(1) || "Pending")}
                     </span>
                   </div>
 
@@ -588,7 +710,7 @@ export default function Orders() {
       )}
 
       {/* Monthly View */}
-      {viewMode === 'monthly' && (
+      {viewMode === "monthly" && (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-50 to-yellow-50">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -603,9 +725,14 @@ export default function Orders() {
                 </p>
               </div>
               <div className="bg-white px-3 sm:px-4 py-2 rounded-lg shadow-sm">
-                <p className="text-xs sm:text-sm text-gray-500">Monthly Revenue</p>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  Monthly Revenue
+                </p>
                 <p className="text-xl sm:text-2xl font-bold text-green-600">
-                  ₱{dailyOrders.reduce((sum, day) => sum + day.revenue, 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                  ₱
+                  {dailyOrders
+                    .reduce((sum, day) => sum + day.revenue, 0)
+                    .toLocaleString("en-PH", { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
@@ -626,13 +753,20 @@ export default function Orders() {
                         <Calendar className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-800">{day.date}</p>
-                        <p className="text-sm text-gray-500">{day.count} order(s)</p>
+                        <p className="font-semibold text-gray-800">
+                          {day.date}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {day.count} order(s)
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg text-green-600">
-                        ₱{day.revenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        ₱
+                        {day.revenue.toLocaleString("en-PH", {
+                          minimumFractionDigits: 2,
+                        })}
                       </p>
                     </div>
                   </div>
@@ -652,10 +786,14 @@ export default function Orders() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-gray-800 text-sm mb-1">
-                              {order.shippingAddress?.name || `${(order as any).firstName || ''} ${(order as any).lastName || ''}`.trim() || 'Customer'}
+                              {getOrderCustomerLabel(order)}
                             </p>
                             <p className="text-xs text-gray-500">
-                              #{order.id.substring(0, 8)}... • {order.createdAt.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}
+                              #{order.id.substring(0, 8)}... •{" "}
+                              {order.createdAt.toLocaleTimeString("en-PH", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </p>
                           </div>
                         </div>
@@ -664,13 +802,23 @@ export default function Orders() {
                         <div className="flex items-center justify-between mb-3">
                           <div>
                             <p className="font-bold text-lg text-gray-800">
-                              ₱{order.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                              ₱
+                              {order.total.toLocaleString("en-PH", {
+                                minimumFractionDigits: 2,
+                              })}
                             </p>
-                            <p className="text-xs text-gray-500">{order.items.length} item(s)</p>
+                            <p className="text-xs text-gray-500">
+                              {order.items.length} item(s)
+                            </p>
                           </div>
-                          <span className={`px-3 py-1.5 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full ${getStatusColor(order.status || 'pending')}`}>
-                            {getStatusIcon(order.status || 'pending')}
-                            {order.status?.charAt(0).toUpperCase() + (order.status?.slice(1) || 'Pending')}
+                          <span
+                            className={`px-3 py-1.5 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full ${getStatusColor(
+                              order.status || "pending"
+                            )}`}
+                          >
+                            {getStatusIcon(order.status || "pending")}
+                            {order.status?.charAt(0).toUpperCase() +
+                              (order.status?.slice(1) || "Pending")}
                           </span>
                         </div>
 
@@ -709,9 +857,12 @@ export default function Orders() {
             {/* Modal Header */}
             <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white z-10">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">Order Details</h2>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Order Details
+                </h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Order #{selectedOrder.id.substring(0, 8)}... • {selectedOrder.createdAt.toLocaleDateString('en-PH')}
+                  Order #{selectedOrder.id.substring(0, 8)}... •{" "}
+                  {selectedOrder.createdAt.toLocaleDateString("en-PH")}
                 </p>
               </div>
               <button
@@ -734,19 +885,23 @@ export default function Orders() {
                   <div>
                     <p className="text-gray-500">Name</p>
                     <p className="font-medium">
-                      {selectedOrder.shippingAddress?.name || `${(selectedOrder as any).firstName || ''} ${(selectedOrder as any).lastName || ''}`.trim() || 'N/A'}
+                      {getOrderCustomerLabel(selectedOrder)}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-500">Phone</p>
-                    <p className="font-medium">{(selectedOrder as any).phone || 'N/A'}</p>
+                    <p className="font-medium">
+                      {(selectedOrder as any).phone || "N/A"}
+                    </p>
                   </div>
                   <div className="md:col-span-2">
                     <p className="text-gray-500">Address</p>
                     <p className="font-medium">
-                      {(selectedOrder as any).address || 'N/A'}
-                      {(selectedOrder as any).city && `, ${(selectedOrder as any).city}`}
-                      {(selectedOrder as any).zipCode && ` ${(selectedOrder as any).zipCode}`}
+                      {(selectedOrder as any).address || "N/A"}
+                      {(selectedOrder as any).city &&
+                        `, ${(selectedOrder as any).city}`}
+                      {(selectedOrder as any).zipCode &&
+                        ` ${(selectedOrder as any).zipCode}`}
                     </p>
                   </div>
                 </div>
@@ -767,7 +922,10 @@ export default function Orders() {
                 ) : (
                   <div className="space-y-4">
                     {orderProducts.map((item, index) => (
-                      <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div
+                        key={index}
+                        className="flex gap-4 p-4 bg-gray-50 rounded-lg"
+                      >
                         {item.product?.images && item.product.images[0] && (
                           <img
                             src={item.product.images[0]}
@@ -777,7 +935,7 @@ export default function Orders() {
                         )}
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-800">
-                            {item.product?.name || 'Product not found'}
+                            {item.product?.name || "Product not found"}
                           </h4>
                           {item.product?.description && (
                             <p className="text-sm text-gray-600 mt-1 line-clamp-2">
@@ -786,18 +944,29 @@ export default function Orders() {
                           )}
                           <div className="mt-2 flex items-center gap-4">
                             <span className="text-sm text-gray-500">
-                              Quantity: <span className="font-semibold text-gray-700">{item.quantity}</span>
+                              Quantity:{" "}
+                              <span className="font-semibold text-gray-700">
+                                {item.quantity}
+                              </span>
                             </span>
                             <span className="text-sm text-gray-500">
-                              Price: <span className="font-semibold text-gray-700">
-                                ₱{item.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                              Price:{" "}
+                              <span className="font-semibold text-gray-700">
+                                ₱
+                                {item.price.toLocaleString("en-PH", {
+                                  minimumFractionDigits: 2,
+                                })}
                               </span>
                             </span>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-gray-800">
-                            ₱{(item.quantity * item.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            ₱
+                            {(item.quantity * item.price).toLocaleString(
+                              "en-PH",
+                              { minimumFractionDigits: 2 }
+                            )}
                           </p>
                         </div>
                       </div>
@@ -812,14 +981,20 @@ export default function Orders() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal:</span>
                     <span className="font-medium">
-                      ₱{(selectedOrder.subtotal || selectedOrder.total - 99).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      ₱
+                      {(
+                        selectedOrder.subtotal || selectedOrder.total - 99
+                      ).toLocaleString("en-PH", { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between pt-2 border-t">
                     <span className="font-bold text-lg">Total:</span>
                     <span className="font-bold text-xl text-red-600">
-                      ₱{selectedOrder.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      ₱
+                      {selectedOrder.total.toLocaleString("en-PH", {
+                        minimumFractionDigits: 2,
+                      })}
                     </span>
                   </div>
                 </div>
@@ -828,14 +1003,26 @@ export default function Orders() {
               {/* Order Status */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">Current Status:</span>
-                  <span className={`px-4 py-2 inline-flex items-center gap-2 text-sm font-semibold rounded-full ${getStatusColor(selectedOrder.status || 'pending')}`}>
-                    {getStatusIcon(selectedOrder.status || 'pending')}
-                    {selectedOrder.status?.charAt(0).toUpperCase() + (selectedOrder.status?.slice(1) || 'Pending')}
+                  <span className="text-gray-700 font-medium">
+                    Current Status:
+                  </span>
+                  <span
+                    className={`px-4 py-2 inline-flex items-center gap-2 text-sm font-semibold rounded-full ${getStatusColor(
+                      selectedOrder.status || "pending"
+                    )}`}
+                  >
+                    {getStatusIcon(selectedOrder.status || "pending")}
+                    {selectedOrder.status?.charAt(0).toUpperCase() +
+                      (selectedOrder.status?.slice(1) || "Pending")}
                   </span>
                 </div>
                 <div className="mt-2 text-sm text-gray-500">
-                  <p>Payment Method: <span className="font-medium capitalize">{(selectedOrder as any).paymentMethod || 'N/A'}</span></p>
+                  <p>
+                    Payment Method:{" "}
+                    <span className="font-medium capitalize">
+                      {(selectedOrder as any).paymentMethod || "N/A"}
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>

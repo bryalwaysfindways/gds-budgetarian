@@ -722,7 +722,7 @@ const Orders: React.FC = () => {
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
                 <p className="text-xs text-red-800 mb-2 font-semibold">⚠️ This action cannot be undone</p>
                 <p className="text-xs text-red-700">
-                  The order will be permanently deleted and staff/admin will not be able to process it.
+                  The order will be permanently Cancel and staff/admin will not be able to process it.
                 </p>
               </div>
             </div>
