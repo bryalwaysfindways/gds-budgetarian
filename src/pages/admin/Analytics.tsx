@@ -34,18 +34,22 @@ export default function Analytics() {
     fetchAnalytics();
   }, []);
 
-  // ✅ helper: convert createdAt (Date | Timestamp | string | undefined) → Date | null
+  // helper: convert createdAt (Date | Timestamp | string | undefined) → Date | null
   const toDate = (raw: any): Date | null => {
     if (!raw) return null;
     if (raw instanceof Date) return raw;
-    if (typeof raw === "object" && "seconds" in raw && typeof raw.seconds === "number") {
+    if (
+      typeof raw === "object" &&
+      "seconds" in raw &&
+      typeof raw.seconds === "number"
+    ) {
       return new Date(raw.seconds * 1000);
     }
     const d = new Date(raw);
     return isNaN(d.getTime()) ? null : d;
   };
 
-  // ✅ recompute stats when filters change (and still ignore cancelled orders)
+  // recompute stats when filters change (and still ignore cancelled orders)
   useEffect(() => {
     if (allOrders.length === 0) return;
 
@@ -64,7 +68,7 @@ export default function Analytics() {
       });
     }
 
-    // 2. ✅ exclude cancelled orders from revenue & order count
+    // 2.  exclude cancelled orders from revenue & order count
     const nonCancelled = filtered.filter(
       (o) => (o as any).status !== "cancelled"
     );
@@ -102,8 +106,7 @@ export default function Analytics() {
       const totalCustomers = customers.filter((u) => {
         const user = u as { id: string; role?: string };
         return (
-          (!currentUserId || user.id !== currentUserId) &&
-          user.role === "user"
+          (!currentUserId || user.id !== currentUserId) && user.role === "user"
         );
       }).length;
 
@@ -118,7 +121,7 @@ export default function Analytics() {
       );
       const totalProducts = products.length;
 
-      // ✅ Only delivered / non-cancelled revenue is counted
+      //  Only delivered / non-cancelled revenue is counted
       const nonCancelled = orders.filter(
         (o) => (o as any).status !== "cancelled"
       );
@@ -192,6 +195,23 @@ export default function Analytics() {
     )
   );
 
+  // Helper: display customer's email (or name as fallback)
+  const getOrderCustomerLabel = (order: Order): string => {
+    const o: any = order;
+
+    return (
+      o.email || // main email field on the order
+      o.shippingAddress?.email || // or email inside shipping address
+      o.customerName ||
+      order.shippingAddress?.name ||
+      (o.firstName || o.lastName
+        ? `${o.firstName ?? ""} ${o.lastName ?? ""}`.trim()
+        : "") ||
+      "Customer"
+    );
+  };
+  // ----------------------------------------------------
+
   const monthNames = [
     "January",
     "February",
@@ -224,7 +244,7 @@ export default function Analytics() {
         });
       }
 
-      // ✅ 2) exclude cancelled orders from export calculations
+      //  2) exclude cancelled orders from export calculations
       const exportableOrders = filteredOrders.filter(
         (o) => (o as any).status !== "cancelled"
       );
@@ -237,9 +257,11 @@ export default function Analytics() {
           "Report Period:",
           filterMonth === "all" && filterYear === "all"
             ? "All Time"
-            : `${filterMonth !== "all" ? monthNames[Number(filterMonth)] : "All Months"} ${
-                filterYear !== "all" ? filterYear : ""
-              }`,
+            : `${
+                filterMonth !== "all"
+                  ? monthNames[Number(filterMonth)]
+                  : "All Months"
+              } ${filterYear !== "all" ? filterYear : ""}`,
         ],
         ["Generated On:", new Date().toLocaleString()],
         [""],
@@ -256,9 +278,10 @@ export default function Analytics() {
         [
           "Average Order Value",
           stats.totalOrders > 0
-            ? `₱${(
-                stats.totalRevenue / stats.totalOrders
-              ).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`
+            ? `₱${(stats.totalRevenue / stats.totalOrders).toLocaleString(
+                "en-PH",
+                { minimumFractionDigits: 2 }
+              )}`
             : "₱0.00",
         ],
       ];
@@ -293,8 +316,7 @@ export default function Analytics() {
             ? `${o.firstName ?? ""} ${o.lastName ?? ""}`.trim()
             : "N/A");
 
-        const phone =
-          o.shippingAddress?.phone || o.phone || "N/A";
+        const phone = o.shippingAddress?.phone || o.phone || "N/A";
 
         const address = o.shippingAddress
           ? `${o.shippingAddress.street ?? ""}, ${
@@ -328,12 +350,11 @@ export default function Analytics() {
         const o: any = order;
         if (Array.isArray(o.items)) {
           o.items.forEach((item: any) => {
-            const current =
-              productSalesMap.get(item.productId) || {
-                name: "",
-                quantity: 0,
-                revenue: 0,
-              };
+            const current = productSalesMap.get(item.productId) || {
+              name: "",
+              quantity: 0,
+              revenue: 0,
+            };
             productSalesMap.set(item.productId, {
               name:
                 current.name ||
@@ -531,9 +552,11 @@ export default function Analytics() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm md:text-base truncate">
-                      #{order.id.slice(0, 8)}
+                      {getOrderCustomerLabel(order)}
                     </p>
+
                     <p className="text-xs md:text-sm text-gray-500">
+                      #{order.id.slice(0, 8)} •{" "}
                       {toDate(order.createdAt as any)?.toLocaleDateString() ??
                         "Invalid Date"}
                     </p>
